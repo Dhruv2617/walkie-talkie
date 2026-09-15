@@ -15,7 +15,7 @@ MAX_MESSAGES = 50
 
 def _check_secret(r, channel_id: str, secret: str):
     stored = r.get(f"channel:{channel_id}:secret")
-    if stored is None or stored != secret:
+    if stored is None or not secrets.compare_digest(stored, secret):
         raise HTTPException(status_code=403, detail="invalid channel or secret")
 
 
@@ -44,13 +44,16 @@ def join_channel(channel_id: str, body: JoinRequest):
 def heartbeat(channel_id: str, body: JoinRequest):
     r = get_client()
     _check_secret(r, channel_id, body.secret)
-    r.expire(f"channel:{channel_id}:online:{body.role}", PRESENCE_TTL_SECONDS)
+    refreshed = r.expire(f"channel:{channel_id}:online:{body.role}", PRESENCE_TTL_SECONDS)
+    if not refreshed:
+        raise HTTPException(status_code=404, detail={"error": "not_claimed"})
     return {"ok": True}
 
 
 @router.get("/channels/{channel_id}/presence/{role}")
-def get_presence(channel_id: str, role: str):
+def get_presence(channel_id: str, role: str, secret: str):
     r = get_client()
+    _check_secret(r, channel_id, secret)
     online = r.exists(f"channel:{channel_id}:online:{role}") == 1
     return {"online": online}
 
@@ -76,8 +79,9 @@ def push_message(channel_id: str, body: PushMessageRequest):
 
 
 @router.get("/channels/{channel_id}/messages")
-def pull_messages(channel_id: str, since: int = 0):
+def pull_messages(channel_id: str, secret: str, since: int = 0):
     r = get_client()
+    _check_secret(r, channel_id, secret)
     raw = r.lrange(f"channel:{channel_id}:messages", 0, -1)
     messages = [json.loads(m) for m in raw]
     return {"messages": [m for m in messages if m["id"] > since]}

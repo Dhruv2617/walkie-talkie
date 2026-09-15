@@ -10,7 +10,6 @@ from relay.app.main import app
 def fake_redis(monkeypatch):
     fake = fakeredis.FakeStrictRedis(decode_responses=True)
     monkeypatch.setattr(redis_client, "_client", fake)
-    monkeypatch.setattr(redis_client, "get_client", lambda: fake)
     return fake
 
 

@@ -63,14 +63,32 @@ def test_presence_true_when_joined(client, fake_redis):
     channel_id, secret = created["channel_id"], created["secret"]
     client.post(f"/channels/{channel_id}/join", json={"secret": secret, "role": "backend"})
 
-    resp = client.get(f"/channels/{channel_id}/presence/backend")
+    resp = client.get(f"/channels/{channel_id}/presence/backend", params={"secret": secret})
     assert resp.json() == {"online": True}
 
 
 def test_presence_false_when_not_joined(client, fake_redis):
     created = client.post("/channels").json()
-    resp = client.get(f"/channels/{created['channel_id']}/presence/backend")
+    resp = client.get(
+        f"/channels/{created['channel_id']}/presence/backend",
+        params={"secret": created["secret"]},
+    )
     assert resp.json() == {"online": False}
+
+
+def test_presence_requires_secret(client, fake_redis):
+    created = client.post("/channels").json()
+    resp = client.get(f"/channels/{created['channel_id']}/presence/backend")
+    assert resp.status_code == 422
+
+
+def test_presence_rejects_wrong_secret(client, fake_redis):
+    created = client.post("/channels").json()
+    resp = client.get(
+        f"/channels/{created['channel_id']}/presence/backend",
+        params={"secret": "wrong"},
+    )
+    assert resp.status_code == 403
 
 
 def test_push_message_returns_incrementing_id(client, fake_redis):
@@ -140,6 +158,45 @@ def test_pull_returns_only_messages_after_since(client, fake_redis):
             json={"secret": secret, "from": "backend", "type": "fyi", "text": text},
         )
 
-    resp = client.get(f"/channels/{channel_id}/messages", params={"since": 1})
+    resp = client.get(f"/channels/{channel_id}/messages", params={"since": 1, "secret": secret})
     texts = [m["text"] for m in resp.json()["messages"]]
     assert texts == ["b", "c"]
+
+
+def test_pull_requires_secret(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id = created["channel_id"]
+    resp = client.get(f"/channels/{channel_id}/messages")
+    assert resp.status_code == 422
+
+
+def test_pull_rejects_wrong_secret(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id = created["channel_id"]
+    resp = client.get(f"/channels/{channel_id}/messages", params={"secret": "wrong"})
+    assert resp.status_code == 403
+
+
+def test_heartbeat_returns_404_when_role_not_claimed(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+
+    resp = client.post(
+        f"/channels/{channel_id}/heartbeat",
+        json={"secret": secret, "role": "backend"},
+    )
+    assert resp.status_code == 404
+    assert resp.json()["detail"]["error"] == "not_claimed"
+
+
+def test_heartbeat_succeeds_when_claimed(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+    client.post(f"/channels/{channel_id}/join", json={"secret": secret, "role": "backend"})
+
+    resp = client.post(
+        f"/channels/{channel_id}/heartbeat",
+        json={"secret": secret, "role": "backend"},
+    )
+    assert resp.status_code == 200
+    assert resp.json() == {"ok": True}
