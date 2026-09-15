@@ -1,7 +1,6 @@
 import secrets
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
 
 from relay.app.models import CreateChannelResponse, JoinRequest
 from relay.app.redis_client import get_client
@@ -34,7 +33,7 @@ def join_channel(channel_id: str, body: JoinRequest):
     key = f"channel:{channel_id}:online:{body.role}"
     claimed = r.set(key, "1", nx=True, ex=PRESENCE_TTL_SECONDS)
     if not claimed:
-        return JSONResponse(status_code=409, content={"error": "role_taken"})
+        raise HTTPException(status_code=409, detail={"error": "role_taken"})
     return {"ok": True}
 
 

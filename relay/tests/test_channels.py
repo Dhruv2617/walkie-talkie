@@ -24,7 +24,7 @@ def test_join_rejects_when_role_already_held(client, fake_redis):
 
     resp = client.post(f"/channels/{channel_id}/join", json={"secret": secret, "role": "backend"})
     assert resp.status_code == 409
-    assert resp.json()["error"] == "role_taken"
+    assert resp.json()["detail"]["error"] == "role_taken"
 
 
 def test_join_rejects_wrong_secret(client, fake_redis):
