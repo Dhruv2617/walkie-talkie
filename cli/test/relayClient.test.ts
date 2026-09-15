@@ -34,4 +34,19 @@ describe("relayClient", () => {
 
     await expect(relayClient.joinChannel("abc", "shh", "backend")).rejects.toThrow("role_taken");
   });
+
+  it("joinChannel throws plain-string detail on 403", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: async () => ({ detail: "invalid channel or secret" }),
+      })
+    );
+
+    await expect(relayClient.joinChannel("abc", "wrong-secret", "backend")).rejects.toThrow(
+      "invalid channel or secret"
+    );
+  });
 });
