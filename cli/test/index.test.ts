@@ -30,9 +30,16 @@ describe("dispatch", () => {
 
   it("share pushes the given text", async () => {
     vi.mocked(share.runShare).mockResolvedValue(9);
-    const out = await dispatch(["share", "qty is integer only"]);
-    expect(share.runShare).toHaveBeenCalledWith("qty is integer only");
+    const out = await dispatch(["share", "qty", "is", "integer", "only"]);
+    expect(share.runShare).toHaveBeenCalledWith("qty is integer only", undefined);
     expect(out).toContain("9");
+  });
+
+  it("share parses --reply-to and passes it through", async () => {
+    vi.mocked(share.runShare).mockResolvedValue(102);
+    const out = await dispatch(["share", "integer", "only", "--reply-to", "101"]);
+    expect(share.runShare).toHaveBeenCalledWith("integer only", { replyTo: 101 });
+    expect(out).toContain("102");
   });
 
   it("ask prints the returned answer", async () => {

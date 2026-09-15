@@ -1,5 +1,5 @@
-import { encodeInviteCode } from "../inviteCode";
-import { createChannel } from "../relayClient";
+import { encodeInviteCode } from "../inviteCode.js";
+import { createChannel } from "../relayClient.js";
 
 export async function runInit(): Promise<string> {
   const { channelId, secret } = await createChannel();

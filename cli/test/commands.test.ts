@@ -34,7 +34,7 @@ describe("runJoin", () => {
 
     expect(relayClient.joinChannel).toHaveBeenCalledWith("abc", "shh", "frontend");
     expect(config.writeConfig).toHaveBeenCalledWith({ channelId: "abc", secret: "shh", role: "frontend" });
-    expect(relayClient.pullMessages).toHaveBeenCalledWith("abc", 3);
+    expect(relayClient.pullMessages).toHaveBeenCalledWith("abc", "shh", 3);
     expect(config.writeLastSeenId).toHaveBeenCalledWith("abc", 4);
     expect(messages).toHaveLength(1);
   });
@@ -70,6 +70,21 @@ describe("runShare", () => {
       text: "qty is integer only",
     });
     expect(id).toBe(9);
+  });
+
+  it("pushes an answer message with reply_to when replyTo is given", async () => {
+    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", role: "backend" });
+    vi.mocked(relayClient.pushMessage).mockResolvedValue(102);
+
+    const id = await runShare("integer only", { replyTo: 101 });
+
+    expect(relayClient.pushMessage).toHaveBeenCalledWith("abc", "shh", {
+      from: "backend",
+      type: "answer",
+      text: "integer only",
+      reply_to: 101,
+    });
+    expect(id).toBe(102);
   });
 });
 

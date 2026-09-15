@@ -5,6 +5,8 @@
   "bin": { "ctx-relay": "./dist/index.js" },
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm run typecheck",
     "test": "vitest run"
   },
   "devDependencies": {

@@ -1,7 +1,9 @@
-import { runInit } from "./commands/init";
-import { runJoin } from "./commands/join";
-import { runShare } from "./commands/share";
-import { runAsk } from "./commands/ask";
+#!/usr/bin/env node
+import { pathToFileURL } from "node:url";
+import { runInit } from "./commands/init.js";
+import { runJoin } from "./commands/join.js";
+import { runShare } from "./commands/share.js";
+import { runAsk } from "./commands/ask.js";
 
 export async function dispatch(argv: string[]): Promise<string> {
   const [cmd, ...rest] = argv;
@@ -20,12 +22,23 @@ export async function dispatch(argv: string[]): Promise<string> {
       return `attached as ${role}\n${messages.length} unread message(s) pulled in`;
     }
     case "share": {
-      const [text] = rest;
-      const id = await runShare(text);
+      let replyTo: number | undefined;
+      const words = [...rest];
+      const flagIdx = words.indexOf("--reply-to");
+      if (flagIdx !== -1) {
+        const value = words[flagIdx + 1];
+        replyTo = Number(value);
+        if (!value || Number.isNaN(replyTo)) {
+          throw new Error("usage: ctx-relay share <text> [--reply-to <id>]");
+        }
+        words.splice(flagIdx, 2);
+      }
+      const text = words.join(" ");
+      const id = await runShare(text, replyTo !== undefined ? { replyTo } : undefined);
       return `pushed message ${id}`;
     }
     case "ask": {
-      const [question] = rest;
+      const question = rest.join(" ");
       return runAsk(question);
     }
     default:
@@ -33,11 +46,15 @@ export async function dispatch(argv: string[]): Promise<string> {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   dispatch(process.argv.slice(2))
     .then((out) => console.log(out))
     .catch((err) => {
-      console.error(err.message);
+      const message =
+        err.message === "role_taken"
+          ? "that role is already taken in this channel"
+          : err.message;
+      console.error(message);
       process.exitCode = 1;
     });
 }

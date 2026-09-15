@@ -1,5 +1,5 @@
-import { readConfig } from "../config";
-import { getPresence, pullMessages, pushMessage } from "../relayClient";
+import { readConfig } from "../config.js";
+import { getPresence, pullMessages, pushMessage } from "../relayClient.js";
 
 const OTHER_ROLE = { backend: "frontend", frontend: "backend" } as const;
 
@@ -18,7 +18,7 @@ export async function runAsk(
   if (!cfg) throw new Error("not joined to a channel — run `ctx-relay join <code>` first");
 
   const otherRole = OTHER_ROLE[cfg.role];
-  const online = await getPresence(cfg.channelId, otherRole);
+  const online = await getPresence(cfg.channelId, cfg.secret, otherRole);
 
   const questionId = await pushMessage(cfg.channelId, cfg.secret, {
     from: cfg.role,
@@ -32,7 +32,7 @@ export async function runAsk(
 
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const messages = await pullMessages(cfg.channelId, questionId - 1);
+    const messages = await pullMessages(cfg.channelId, cfg.secret, questionId - 1);
     const reply = messages.find((m) => m.type === "answer" && m.reply_to === questionId);
     if (reply) return reply.text;
     await sleep(pollIntervalMs);

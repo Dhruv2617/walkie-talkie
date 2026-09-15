@@ -1,6 +1,6 @@
-import { decodeInviteCode } from "../inviteCode";
-import { readLastSeenId, writeConfig, writeLastSeenId } from "../config";
-import { Message, joinChannel, pullMessages } from "../relayClient";
+import { decodeInviteCode } from "../inviteCode.js";
+import { readLastSeenId, writeConfig, writeLastSeenId } from "../config.js";
+import { Message, joinChannel, pullMessages } from "../relayClient.js";
 
 export async function runJoin(
   code: string,
@@ -18,7 +18,7 @@ export async function runJoin(
   writeConfig({ channelId, secret, role });
 
   const since = readLastSeenId(channelId);
-  const messages = await pullMessages(channelId, since);
+  const messages = await pullMessages(channelId, secret, since);
   if (messages.length > 0) {
     writeLastSeenId(channelId, messages[messages.length - 1].id);
   }

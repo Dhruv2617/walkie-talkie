@@ -9,15 +9,38 @@ export interface Message {
   reply_to: number | null;
 }
 
+function stringifyDetail(detail: unknown): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((d) => (d && typeof d === "object" && "msg" in d ? String((d as any).msg) : JSON.stringify(d)))
+      .join("; ");
+    return messages || "request_failed";
+  }
+  if (detail && typeof detail === "object") {
+    const error = (detail as any).error;
+    if (typeof error === "string") return error;
+    return JSON.stringify(detail);
+  }
+  return "request_failed";
+}
+
 async function request(path: string, init?: RequestInit): Promise<any> {
   const resp = await fetch(`${BASE_URL}${path}`, {
     ...init,
     headers: { "content-type": "application/json", ...(init?.headers ?? {}) },
   });
-  const body = await resp.json();
+
+  let body: any;
+  try {
+    body = await resp.json();
+  } catch {
+    body = null;
+  }
+
   if (!resp.ok) {
-    const error = body?.detail?.error ?? body?.detail ?? "request_failed";
-    throw new Error(typeof error === "string" ? error : JSON.stringify(error));
+    const error = body?.detail !== undefined ? stringifyDetail(body.detail) : `${resp.status} ${resp.statusText}`.trim();
+    throw new Error(error || "request_failed");
   }
   return body;
 }
@@ -41,15 +64,17 @@ export async function heartbeat(channelId: string, secret: string, role: string)
   });
 }
 
-export async function getPresence(channelId: string, role: string): Promise<boolean> {
-  const body = await request(`/channels/${channelId}/presence/${role}`);
+export async function getPresence(channelId: string, secret: string, role: string): Promise<boolean> {
+  const body = await request(
+    `/channels/${channelId}/presence/${role}?secret=${encodeURIComponent(secret)}`
+  );
   return body.online as boolean;
 }
 
 export async function pushMessage(
   channelId: string,
   secret: string,
-  msg: { from: string; type: string; text: string; reply_to?: number }
+  msg: { from: "backend" | "frontend"; type: "fyi" | "question" | "answer"; text: string; reply_to?: number }
 ): Promise<number> {
   const body = await request(`/channels/${channelId}/messages`, {
     method: "POST",
@@ -58,7 +83,9 @@ export async function pushMessage(
   return body.id as number;
 }
 
-export async function pullMessages(channelId: string, since: number): Promise<Message[]> {
-  const body = await request(`/channels/${channelId}/messages?since=${since}`);
+export async function pullMessages(channelId: string, secret: string, since: number): Promise<Message[]> {
+  const body = await request(
+    `/channels/${channelId}/messages?since=${since}&secret=${encodeURIComponent(secret)}`
+  );
   return body.messages as Message[];
 }
