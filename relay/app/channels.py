@@ -1,13 +1,16 @@
+import json
 import secrets
+import time
 
 from fastapi import APIRouter, HTTPException
 
-from relay.app.models import CreateChannelResponse, JoinRequest
+from relay.app.models import CreateChannelResponse, JoinRequest, PushMessageRequest
 from relay.app.redis_client import get_client
 
 router = APIRouter()
 
 PRESENCE_TTL_SECONDS = 60
+MAX_MESSAGES = 50
 
 
 def _check_secret(r, channel_id: str, secret: str):
@@ -50,3 +53,23 @@ def get_presence(channel_id: str, role: str):
     r = get_client()
     online = r.exists(f"channel:{channel_id}:online:{role}") == 1
     return {"online": online}
+
+
+@router.post("/channels/{channel_id}/messages", status_code=201)
+def push_message(channel_id: str, body: PushMessageRequest):
+    r = get_client()
+    _check_secret(r, channel_id, body.secret)
+
+    msg_id = r.incr(f"channel:{channel_id}:next_id")
+    entry = {
+        "id": msg_id,
+        "from": body.from_,
+        "ts": int(time.time()),
+        "type": body.type,
+        "text": body.text,
+        "reply_to": body.reply_to,
+    }
+    key = f"channel:{channel_id}:messages"
+    r.rpush(key, json.dumps(entry))
+    r.ltrim(key, -MAX_MESSAGES, -1)
+    return {"id": msg_id}

@@ -71,3 +71,60 @@ def test_presence_false_when_not_joined(client, fake_redis):
     created = client.post("/channels").json()
     resp = client.get(f"/channels/{created['channel_id']}/presence/backend")
     assert resp.json() == {"online": False}
+
+
+def test_push_message_returns_incrementing_id(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+
+    first = client.post(
+        f"/channels/{channel_id}/messages",
+        json={"secret": secret, "from": "backend", "type": "fyi", "text": "hello"},
+    )
+    second = client.post(
+        f"/channels/{channel_id}/messages",
+        json={"secret": secret, "from": "backend", "type": "fyi", "text": "again"},
+    )
+    assert first.json()["id"] == 1
+    assert second.json()["id"] == 2
+
+
+def test_push_message_round_trips_from_field(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+
+    resp = client.post(
+        f"/channels/{channel_id}/messages",
+        json={"secret": secret, "from": "backend", "type": "fyi", "text": "hello"},
+    )
+    assert resp.status_code == 201
+    import json as _json
+
+    raw = fake_redis.lrange(f"channel:{channel_id}:messages", 0, -1)
+    stored = _json.loads(raw[-1])
+    assert stored["from"] == "backend"
+    assert stored["id"] == resp.json()["id"]
+
+
+def test_push_trims_to_last_50(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+
+    for i in range(55):
+        client.post(
+            f"/channels/{channel_id}/messages",
+            json={"secret": secret, "from": "backend", "type": "fyi", "text": f"msg {i}"},
+        )
+
+    assert fake_redis.llen(f"channel:{channel_id}:messages") == 50
+
+
+def test_push_message_wrong_secret_returns_403(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id = created["channel_id"]
+
+    resp = client.post(
+        f"/channels/{channel_id}/messages",
+        json={"secret": "wrong", "from": "backend", "type": "fyi", "text": "hello"},
+    )
+    assert resp.status_code == 403

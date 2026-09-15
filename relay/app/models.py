@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CreateChannelResponse(BaseModel):
@@ -11,3 +11,13 @@ class CreateChannelResponse(BaseModel):
 class JoinRequest(BaseModel):
     secret: str
     role: Literal["backend", "frontend"]
+
+
+class PushMessageRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    secret: str
+    from_: Literal["backend", "frontend"] = Field(alias="from")
+    type: Literal["fyi", "question", "answer"]
+    text: str
+    reply_to: Optional[int] = None
