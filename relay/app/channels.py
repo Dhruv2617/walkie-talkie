@@ -1,11 +1,20 @@
 import secrets
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 
-from relay.app.models import CreateChannelResponse
+from relay.app.models import CreateChannelResponse, JoinRequest
 from relay.app.redis_client import get_client
 
 router = APIRouter()
+
+PRESENCE_TTL_SECONDS = 60
+
+
+def _check_secret(r, channel_id: str, secret: str):
+    stored = r.get(f"channel:{channel_id}:secret")
+    if stored is None or stored != secret:
+        raise HTTPException(status_code=403, detail="invalid channel or secret")
 
 
 @router.post("/channels", status_code=201, response_model=CreateChannelResponse)
@@ -15,3 +24,23 @@ def create_channel():
     secret = secrets.token_urlsafe(24)
     r.set(f"channel:{channel_id}:secret", secret)
     return CreateChannelResponse(channel_id=channel_id, secret=secret)
+
+
+@router.post("/channels/{channel_id}/join", status_code=201)
+def join_channel(channel_id: str, body: JoinRequest):
+    r = get_client()
+    _check_secret(r, channel_id, body.secret)
+
+    key = f"channel:{channel_id}:online:{body.role}"
+    claimed = r.set(key, "1", nx=True, ex=PRESENCE_TTL_SECONDS)
+    if not claimed:
+        return JSONResponse(status_code=409, content={"error": "role_taken"})
+    return {"ok": True}
+
+
+@router.post("/channels/{channel_id}/heartbeat")
+def heartbeat(channel_id: str, body: JoinRequest):
+    r = get_client()
+    _check_secret(r, channel_id, body.secret)
+    r.expire(f"channel:{channel_id}:online:{body.role}", PRESENCE_TTL_SECONDS)
+    return {"ok": True}
