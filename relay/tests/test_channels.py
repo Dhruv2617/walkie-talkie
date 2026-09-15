@@ -56,3 +56,18 @@ def test_join_is_atomic_under_concurrent_claims(client, fake_redis):
     statuses = [r.status_code for r in responses]
     assert statuses.count(201) == 1
     assert statuses.count(409) == 19
+
+
+def test_presence_true_when_joined(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+    client.post(f"/channels/{channel_id}/join", json={"secret": secret, "role": "backend"})
+
+    resp = client.get(f"/channels/{channel_id}/presence/backend")
+    assert resp.json() == {"online": True}
+
+
+def test_presence_false_when_not_joined(client, fake_redis):
+    created = client.post("/channels").json()
+    resp = client.get(f"/channels/{created['channel_id']}/presence/backend")
+    assert resp.json() == {"online": False}

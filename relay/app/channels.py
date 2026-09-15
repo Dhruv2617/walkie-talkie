@@ -43,3 +43,10 @@ def heartbeat(channel_id: str, body: JoinRequest):
     _check_secret(r, channel_id, body.secret)
     r.expire(f"channel:{channel_id}:online:{body.role}", PRESENCE_TTL_SECONDS)
     return {"ok": True}
+
+
+@router.get("/channels/{channel_id}/presence/{role}")
+def get_presence(channel_id: str, role: str):
+    r = get_client()
+    online = r.exists(f"channel:{channel_id}:online:{role}") == 1
+    return {"online": online}
