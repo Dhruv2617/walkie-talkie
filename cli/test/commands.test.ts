@@ -36,4 +36,21 @@ describe("runJoin", () => {
     expect(config.writeLastSeenId).toHaveBeenCalledWith("abc", 4);
     expect(messages).toHaveLength(1);
   });
+
+  it("does not advance the marker when there are no unread messages", async () => {
+    vi.mocked(config.readLastSeenId).mockReturnValue(3);
+    vi.mocked(relayClient.pullMessages).mockResolvedValue([]);
+
+    const { messages } = await runJoin("CTXR-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ", "frontend");
+
+    expect(config.writeLastSeenId).not.toHaveBeenCalled();
+    expect(messages).toHaveLength(0);
+  });
+
+  it("rejects with a clear error for a malformed invite code", async () => {
+    await expect(runJoin("not-a-valid-code", "frontend")).rejects.toThrow("invalid invite code");
+
+    expect(relayClient.joinChannel).not.toHaveBeenCalled();
+    expect(config.writeConfig).not.toHaveBeenCalled();
+  });
 });

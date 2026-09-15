@@ -6,7 +6,13 @@ export async function runJoin(
   code: string,
   role: "backend" | "frontend"
 ): Promise<{ messages: Message[] }> {
-  const { channelId, secret } = decodeInviteCode(code);
+  let channelId: string;
+  let secret: string;
+  try {
+    ({ channelId, secret } = decodeInviteCode(code));
+  } catch {
+    throw new Error("invalid invite code");
+  }
 
   await joinChannel(channelId, secret, role);
   writeConfig({ channelId, secret, role });
