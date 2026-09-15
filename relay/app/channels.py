@@ -73,3 +73,11 @@ def push_message(channel_id: str, body: PushMessageRequest):
     r.rpush(key, json.dumps(entry))
     r.ltrim(key, -MAX_MESSAGES, -1)
     return {"id": msg_id}
+
+
+@router.get("/channels/{channel_id}/messages")
+def pull_messages(channel_id: str, since: int = 0):
+    r = get_client()
+    raw = r.lrange(f"channel:{channel_id}:messages", 0, -1)
+    messages = [json.loads(m) for m in raw]
+    return {"messages": [m for m in messages if m["id"] > since]}

@@ -128,3 +128,18 @@ def test_push_message_wrong_secret_returns_403(client, fake_redis):
         json={"secret": "wrong", "from": "backend", "type": "fyi", "text": "hello"},
     )
     assert resp.status_code == 403
+
+
+def test_pull_returns_only_messages_after_since(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+
+    for text in ["a", "b", "c"]:
+        client.post(
+            f"/channels/{channel_id}/messages",
+            json={"secret": secret, "from": "backend", "type": "fyi", "text": text},
+        )
+
+    resp = client.get(f"/channels/{channel_id}/messages", params={"since": 1})
+    texts = [m["text"] for m in resp.json()["messages"]]
+    assert texts == ["b", "c"]
