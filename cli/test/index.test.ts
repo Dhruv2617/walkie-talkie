@@ -40,4 +40,14 @@ describe("dispatch", () => {
     const out = await dispatch(["ask", "does qty accept decimals?"]);
     expect(out).toBe("integer only");
   });
+
+  it("join rejects when --role is missing", async () => {
+    await expect(dispatch(["join", "CTXR-abc"])).rejects.toThrow(
+      "usage: ctx-relay join <code> --role <backend|frontend>"
+    );
+  });
+
+  it("throws a clear error for an unknown command", async () => {
+    await expect(dispatch(["frobnicate"])).rejects.toThrow("unknown command: frobnicate");
+  });
 });
