@@ -1,5 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { dispatch } from "../src/index";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mkdtempSync, mkdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as pathJoin } from "node:path";
+import { pathToFileURL } from "node:url";
+import { dispatch, isMainModule } from "../src/index";
 import * as init from "../src/commands/init";
 import * as join from "../src/commands/join";
 import * as share from "../src/commands/share";
@@ -108,5 +112,55 @@ describe("dispatch", () => {
     const out = await dispatch(["install"]);
     expect(install.runInstall).toHaveBeenCalled();
     expect(out).toContain("installed 3 Claude Code command(s)");
+  });
+});
+
+describe("isMainModule", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(pathJoin(tmpdir(), "wt-mainmodule-test-"));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("returns true when argv[1] matches the module URL directly", () => {
+    const filePath = pathJoin(dir, "index.js");
+    writeFileSync(filePath, "");
+    // import.meta.url is always a resolved-realpath URL in real Node — construct
+    // the "expected" side the same way here rather than from the raw path.
+    const moduleUrl = pathToFileURL(realpathSync(filePath)).href;
+    expect(isMainModule(filePath, moduleUrl)).toBe(true);
+  });
+
+  it("returns true when argv[1] reaches the same file through a symlink", () => {
+    const realDir = pathJoin(dir, "real");
+    mkdirSync(realDir);
+    const realFile = pathJoin(realDir, "index.js");
+    writeFileSync(realFile, "");
+
+    const linkedDir = pathJoin(dir, "linked");
+    symlinkSync(realDir, linkedDir);
+    const argv1ThroughSymlink = pathJoin(linkedDir, "index.js");
+
+    // import.meta.url would resolve through the symlink to the real path —
+    // simulate that by comparing against the real file's canonical URL.
+    const moduleUrl = pathToFileURL(realpathSync(realFile)).href;
+    expect(isMainModule(argv1ThroughSymlink, moduleUrl)).toBe(true);
+  });
+
+  it("returns false when argv[1] points at a different file entirely", () => {
+    const filePath = pathJoin(dir, "index.js");
+    const otherPath = pathJoin(dir, "other.js");
+    writeFileSync(filePath, "");
+    writeFileSync(otherPath, "");
+    const moduleUrl = pathToFileURL(realpathSync(filePath)).href;
+    expect(isMainModule(otherPath, moduleUrl)).toBe(false);
+  });
+
+  it("returns false when argv[1] is undefined", () => {
+    expect(isMainModule(undefined, "file:///anything")).toBe(false);
   });
 });

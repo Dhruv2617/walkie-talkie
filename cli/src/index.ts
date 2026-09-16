@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { runInit } from "./commands/init.js";
 import { runJoin } from "./commands/join.js";
@@ -80,7 +81,20 @@ export async function dispatch(argv: string[]): Promise<string> {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+export function isMainModule(argv1: string | undefined, moduleUrl: string): boolean {
+  if (!argv1) return false;
+  let resolved: string;
+  try {
+    // import.meta.url resolves through symlinks (e.g. macOS /tmp -> /private/tmp);
+    // argv[1] does not, so compare canonical paths on both sides rather than raw ones.
+    resolved = realpathSync(argv1);
+  } catch {
+    resolved = argv1;
+  }
+  return moduleUrl === pathToFileURL(resolved).href;
+}
+
+if (isMainModule(process.argv[1], import.meta.url)) {
   dispatch(process.argv.slice(2))
     .then((out) => console.log(out))
     .catch((err) => {
