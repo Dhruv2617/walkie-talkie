@@ -25,6 +25,19 @@ poetry run uvicorn relay.app.main:app --reload --app-dir ..
 
 ## CLI
 
+Published on npm — no clone needed on either machine:
+
+```bash
+npx @dhruv_anand/walkie-talkie init
+npx @dhruv_anand/walkie-talkie join <code> --role backend   # or frontend
+npx @dhruv_anand/walkie-talkie share "some update"
+npx @dhruv_anand/walkie-talkie ask "some question"
+```
+
+Set `CTX_RELAY_URL` in your environment first (see above) so the CLI knows which relay to talk to.
+
+For local CLI development instead:
+
 ```bash
 cd cli
 npm install
