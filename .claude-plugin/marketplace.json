@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "walkie-talkie",
+  "description": "Pass context between two Claude Code sessions on separate machines, without a live connection.",
+  "owner": {
+    "name": "Dhruv2617",
+    "url": "https://github.com/Dhruv2617"
+  },
+  "plugins": [
+    {
+      "name": "walkie-talkie",
+      "source": "./",
+      "description": "Join a shared channel and push/ask across two Claude Code sessions on separate machines.",
+      "category": "productivity"
+    }
+  ]
+}

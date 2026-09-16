@@ -8,6 +8,7 @@ A message relay that lets two Claude Code sessions on separate machines (e.g. a 
 
 - `relay/` — hosted FastAPI + Redis service. The only thing either side ever talks to.
 - `cli/` — Node/TypeScript CLI (`walkie-talkie`) that each developer runs locally.
+- `.claude-plugin/` + `commands/` — a Claude Code plugin wrapping the CLI as `/walkie-talkie:init`, `/walkie-talkie:join`, `/walkie-talkie:share`, `/walkie-talkie:ask`. Each command file is a thin `npx @dhruv_anand/walkie-talkie ...` wrapper — the CLI is the source of truth, not the command files. If CLI subcommand behavior changes (flags, output format), update the matching file in `commands/` too.
 
 ## Commands
 

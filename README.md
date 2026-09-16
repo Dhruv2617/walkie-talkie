@@ -23,9 +23,30 @@ poetry run uvicorn relay.app.main:app --reload --app-dir ..
 - `REDIS_URL` — Redis connection string used by the relay (default: `redis://localhost:6379/0`).
 - `CTX_RELAY_URL` — base URL the CLI uses to reach the relay (default: `https://relay.walkie-talkie.dev`). Point this at your local relay, e.g. `http://localhost:8000`, during development.
 
-## CLI
+## Claude Code plugin (recommended)
 
-Published on npm — no clone needed on either machine:
+Install once per machine — no per-project setup, no manual `npx` typing:
+
+```
+/plugin marketplace add Dhruv2617/walkie-talkie
+/plugin install walkie-talkie
+```
+
+Then, in any project, from inside Claude Code:
+
+```
+/walkie-talkie:init                              (once, ever — creates the channel)
+/walkie-talkie:join <code> --role backend         (every session, both sides)
+/walkie-talkie:share "some update"
+/walkie-talkie:ask "some question"
+```
+
+Commands call the published CLI under the hood (`npx @dhruv_anand/walkie-talkie ...`), so both
+machines just need Node/npx available — no repo clone required.
+
+## CLI (manual)
+
+The plugin's commands are a thin wrapper — the same commands work directly from any terminal:
 
 ```bash
 npx @dhruv_anand/walkie-talkie init
