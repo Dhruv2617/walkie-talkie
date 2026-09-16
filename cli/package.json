@@ -1,10 +1,13 @@
 {
-  "name": "walkie-talkie",
+  "name": "@dhruv_anand/walkie-talkie",
   "version": "0.1.0",
   "type": "module",
   "bin": { "walkie-talkie": "./dist/index.js" },
+  "files": ["dist"],
+  "publishConfig": { "access": "public" },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/index.js",
+    "prepublishOnly": "npm run build",
     "typecheck": "tsc --noEmit",
     "pretest": "npm run typecheck",
     "test": "vitest run"
