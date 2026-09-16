@@ -14,8 +14,8 @@ def test_join_claims_first_free_slot(client, fake_redis):
         json={"secret": created["secret"]},
     )
     assert resp.status_code == 201
-    assert resp.json()["slot"] == "a"
-    assert fake_redis.ttl(f"channel:{created['channel_id']}:online:a") > 0
+    assert resp.json()["slot"] == "buddy1"
+    assert fake_redis.ttl(f"channel:{created['channel_id']}:online:buddy1") > 0
 
 
 def test_second_join_gets_the_other_slot(client, fake_redis):
@@ -24,8 +24,8 @@ def test_second_join_gets_the_other_slot(client, fake_redis):
     first = client.post(f"/channels/{channel_id}/join", json={"secret": secret})
     second = client.post(f"/channels/{channel_id}/join", json={"secret": secret})
 
-    assert first.json()["slot"] == "a"
-    assert second.json()["slot"] == "b"
+    assert first.json()["slot"] == "buddy1"
+    assert second.json()["slot"] == "buddy2"
 
 
 def test_join_rejects_when_channel_full(client, fake_redis):
@@ -68,7 +68,7 @@ def test_join_is_atomic_under_concurrent_claims(client, fake_redis):
     assert statuses.count(409) == 18
 
     slots = sorted(r.json()["slot"] for r in responses if r.status_code == 201)
-    assert slots == ["a", "b"]
+    assert slots == ["buddy1", "buddy2"]
 
 
 def test_presence_true_when_joined(client, fake_redis):
@@ -76,14 +76,14 @@ def test_presence_true_when_joined(client, fake_redis):
     channel_id, secret = created["channel_id"], created["secret"]
     client.post(f"/channels/{channel_id}/join", json={"secret": secret})
 
-    resp = client.get(f"/channels/{channel_id}/presence/a", params={"secret": secret})
+    resp = client.get(f"/channels/{channel_id}/presence/buddy1", params={"secret": secret})
     assert resp.json() == {"online": True}
 
 
 def test_presence_false_when_not_joined(client, fake_redis):
     created = client.post("/channels").json()
     resp = client.get(
-        f"/channels/{created['channel_id']}/presence/a",
+        f"/channels/{created['channel_id']}/presence/buddy1",
         params={"secret": created["secret"]},
     )
     assert resp.json() == {"online": False}
@@ -91,14 +91,14 @@ def test_presence_false_when_not_joined(client, fake_redis):
 
 def test_presence_requires_secret(client, fake_redis):
     created = client.post("/channels").json()
-    resp = client.get(f"/channels/{created['channel_id']}/presence/a")
+    resp = client.get(f"/channels/{created['channel_id']}/presence/buddy1")
     assert resp.status_code == 422
 
 
 def test_presence_rejects_wrong_secret(client, fake_redis):
     created = client.post("/channels").json()
     resp = client.get(
-        f"/channels/{created['channel_id']}/presence/a",
+        f"/channels/{created['channel_id']}/presence/buddy1",
         params={"secret": "wrong"},
     )
     assert resp.status_code == 403
@@ -110,11 +110,11 @@ def test_push_message_returns_incrementing_id(client, fake_redis):
 
     first = client.post(
         f"/channels/{channel_id}/messages",
-        json={"secret": secret, "from": "a", "type": "fyi", "text": "hello"},
+        json={"secret": secret, "from": "buddy1", "type": "fyi", "text": "hello"},
     )
     second = client.post(
         f"/channels/{channel_id}/messages",
-        json={"secret": secret, "from": "a", "type": "fyi", "text": "again"},
+        json={"secret": secret, "from": "buddy1", "type": "fyi", "text": "again"},
     )
     assert first.json()["id"] == 1
     assert second.json()["id"] == 2
@@ -126,14 +126,14 @@ def test_push_message_round_trips_from_field(client, fake_redis):
 
     resp = client.post(
         f"/channels/{channel_id}/messages",
-        json={"secret": secret, "from": "a", "type": "fyi", "text": "hello"},
+        json={"secret": secret, "from": "buddy1", "type": "fyi", "text": "hello"},
     )
     assert resp.status_code == 201
     import json as _json
 
     raw = fake_redis.lrange(f"channel:{channel_id}:messages", 0, -1)
     stored = _json.loads(raw[-1])
-    assert stored["from"] == "a"
+    assert stored['from'] == 'buddy1'
     assert stored["id"] == resp.json()["id"]
 
 
@@ -144,7 +144,7 @@ def test_push_trims_to_last_50(client, fake_redis):
     for i in range(55):
         client.post(
             f"/channels/{channel_id}/messages",
-            json={"secret": secret, "from": "a", "type": "fyi", "text": f"msg {i}"},
+            json={"secret": secret, "from": "buddy1", "type": "fyi", "text": f"msg {i}"},
         )
 
     assert fake_redis.llen(f"channel:{channel_id}:messages") == 50
@@ -156,7 +156,7 @@ def test_push_message_wrong_secret_returns_403(client, fake_redis):
 
     resp = client.post(
         f"/channels/{channel_id}/messages",
-        json={"secret": "wrong", "from": "a", "type": "fyi", "text": "hello"},
+        json={"secret": "wrong", "from": "buddy1", "type": "fyi", "text": "hello"},
     )
     assert resp.status_code == 403
 
@@ -168,7 +168,7 @@ def test_pull_returns_only_messages_after_since(client, fake_redis):
     for text in ["a", "b", "c"]:
         client.post(
             f"/channels/{channel_id}/messages",
-            json={"secret": secret, "from": "a", "type": "fyi", "text": text},
+            json={"secret": secret, "from": "buddy1", "type": "fyi", "text": text},
         )
 
     resp = client.get(f"/channels/{channel_id}/messages", params={"since": 1, "secret": secret})
@@ -196,7 +196,7 @@ def test_heartbeat_returns_404_when_slot_not_claimed(client, fake_redis):
 
     resp = client.post(
         f"/channels/{channel_id}/heartbeat",
-        json={"secret": secret, "slot": "a"},
+        json={"secret": secret, "slot": "buddy1"},
     )
     assert resp.status_code == 404
     assert resp.json()["detail"]["error"] == "not_claimed"
@@ -209,7 +209,7 @@ def test_heartbeat_succeeds_when_claimed(client, fake_redis):
 
     resp = client.post(
         f"/channels/{channel_id}/heartbeat",
-        json={"secret": secret, "slot": "a"},
+        json={"secret": secret, "slot": "buddy1"},
     )
     assert resp.status_code == 200
     assert resp.json() == {"ok": True}

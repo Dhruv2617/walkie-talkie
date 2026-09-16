@@ -1,7 +1,7 @@
 import { readConfig } from "../config.js";
 import { Slot, getPresence, pullMessages, pushMessage } from "../relayClient.js";
 
-const OTHER_SLOT: Record<Slot, Slot> = { a: "b", b: "a" };
+const OTHER_SLOT: Record<Slot, Slot> = { buddy1: "buddy2", buddy2: "buddy1" };
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

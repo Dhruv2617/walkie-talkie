@@ -55,10 +55,10 @@ describe("relayClient", () => {
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ slot: "a" }),
+        json: async () => ({ slot: "buddy1" }),
       })
     );
 
-    await expect(relayClient.joinChannel("abc", "shh")).resolves.toBe("a");
+    await expect(relayClient.joinChannel("abc", "shh")).resolves.toBe("buddy1");
   });
 });

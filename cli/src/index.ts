@@ -6,24 +6,36 @@ import { runJoin } from "./commands/join.js";
 import { runShare } from "./commands/share.js";
 import { runAsk } from "./commands/ask.js";
 import { runInstall } from "./commands/install.js";
+import { Slot } from "./relayClient.js";
+
+const OTHER_SLOT_NAME: Record<Slot, Slot> = { buddy1: "buddy2", buddy2: "buddy1" };
+
+function connectionStatusLine(slot: Slot, otherOnline: boolean): string {
+  const other = OTHER_SLOT_NAME[slot];
+  return otherOnline
+    ? `connected as ${slot} — ${other} is here too, you're both connected`
+    : `connected as ${slot} — waiting for ${other} to join`;
+}
 
 export async function dispatch(argv: string[]): Promise<string> {
   const [cmd, ...rest] = argv;
 
   switch (cmd) {
     case "init": {
-      const code = await runInit();
-      return `invite code: ${code}`;
+      const { code, slot } = await runInit();
+      const other = OTHER_SLOT_NAME[slot];
+      return `invite code: ${code}\nconnected as ${slot} — send the code above to the other person, then wait for ${other} to join`;
     }
     case "join": {
       const [code] = rest;
       if (!code) {
         throw new Error("usage: ctx-relay join <code>");
       }
-      const { slot, messages } = await runJoin(code);
+      const { slot, otherOnline, messages } = await runJoin(code);
+      const statusLine = connectionStatusLine(slot, otherOnline);
 
       if (messages.length === 0) {
-        return `attached as slot ${slot}\nno unread messages`;
+        return `${statusLine}\nno unread messages`;
       }
 
       const answeredIds = new Set(
@@ -33,7 +45,7 @@ export async function dispatch(argv: string[]): Promise<string> {
         (m) => m.type === "question" && !answeredIds.has(m.id)
       );
 
-      const lines = [`attached as slot ${slot}`, `${messages.length} unread message(s):`];
+      const lines = [statusLine, `${messages.length} unread message(s):`];
       for (const m of messages) {
         const tag = m.reply_to !== null ? ` (reply to ${m.reply_to})` : "";
         lines.push(`  [${m.id}] ${m.from} ${m.type}${tag}: ${m.text}`);

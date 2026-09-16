@@ -13,19 +13,19 @@ class JoinRequest(BaseModel):
 
 
 class JoinResponse(BaseModel):
-    slot: Literal["a", "b"]
+    slot: Literal["buddy1", "buddy2"]
 
 
 class SlotRequest(BaseModel):
     secret: str
-    slot: Literal["a", "b"]
+    slot: Literal["buddy1", "buddy2"]
 
 
 class PushMessageRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     secret: str
-    from_: Literal["a", "b"] = Field(alias="from")
+    from_: Literal["buddy1", "buddy2"] = Field(alias="from")
     type: Literal["fyi", "question", "answer"]
     text: str
     reply_to: Optional[int] = None

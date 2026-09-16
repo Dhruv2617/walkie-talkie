@@ -10,8 +10,10 @@ CTX_RELAY_URL="${CTX_RELAY_URL:-https://walkie-talkie-relay-dhruvs-projects-49c8
   npx --yes @dhruv_anand/walkie-talkie init
 ```
 
-Print the resulting invite code clearly and tell the user to send it to the other person
-(Slack, text, etc — outside this system). They'll need it for `/walkie-talkie:join`.
+This also attaches this session as `buddy1` automatically — no separate `/walkie-talkie:join`
+needed on this side. Print the resulting invite code clearly and tell the user to send it to
+the other person (Slack, text, etc — outside this system). They'll run `/walkie-talkie:join
+<code>` and be assigned `buddy2`.
 
 Do not run this again for the same pairing — running it a second time creates a brand new,
 unrelated channel.

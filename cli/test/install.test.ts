@@ -15,10 +15,10 @@ afterEach(() => {
 });
 
 describe("runInstall", () => {
-  it("writes the three Claude Code commands under .claude/commands", () => {
+  it("writes the four Claude Code commands under .claude/commands", () => {
     const written = runInstall(dir);
 
-    expect(written).toHaveLength(3);
+    expect(written).toHaveLength(4);
     for (const path of written) {
       expect(existsSync(path)).toBe(true);
     }
@@ -26,6 +26,9 @@ describe("runInstall", () => {
 
   it("each command file references the matching CLI subcommand", () => {
     runInstall(dir);
+
+    const init = readFileSync(join(dir, ".claude", "commands", "init-relay.md"), "utf8");
+    expect(init).toContain("walkie-talkie init");
 
     const shareContext = readFileSync(join(dir, ".claude", "commands", "share-context.md"), "utf8");
     expect(shareContext).toContain("walkie-talkie share");

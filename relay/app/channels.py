@@ -11,7 +11,7 @@ router = APIRouter()
 
 PRESENCE_TTL_SECONDS = 60
 MAX_MESSAGES = 50
-SLOTS = ("a", "b")
+SLOTS = ("buddy1", "buddy2")
 
 
 def _check_secret(r, channel_id: str, secret: str):

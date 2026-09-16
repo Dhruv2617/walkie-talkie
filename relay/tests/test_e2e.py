@@ -20,7 +20,7 @@ def test_full_channel_lifecycle(client, fake_redis):
     assert join_1.status_code == 201
     assert join_2.status_code == 201
     slot_1, slot_2 = join_1.json()["slot"], join_2.json()["slot"]
-    assert {slot_1, slot_2} == {"a", "b"}
+    assert {slot_1, slot_2} == {"buddy1", "buddy2"}
 
     # both should be online
     for slot in (slot_1, slot_2):

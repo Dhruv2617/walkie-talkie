@@ -21,8 +21,8 @@ describe("config", () => {
   });
 
   it("writes and reads back the config", () => {
-    config.writeConfig({ channelId: "abc123", secret: "shh", slot: "a" });
-    expect(config.readConfig()).toEqual({ channelId: "abc123", secret: "shh", slot: "a" });
+    config.writeConfig({ channelId: "abc123", secret: "shh", slot: "buddy1" });
+    expect(config.readConfig()).toEqual({ channelId: "abc123", secret: "shh", slot: "buddy1" });
   });
 
   it("tracks last_seen_id per channel, defaulting to 0", () => {

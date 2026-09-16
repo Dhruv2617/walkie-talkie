@@ -5,7 +5,7 @@ import { join } from "node:path";
 export interface Config {
   channelId: string;
   secret: string;
-  slot: "a" | "b";
+  slot: "buddy1" | "buddy2";
 }
 
 let configDir = join(homedir(), ".ctx-relay");

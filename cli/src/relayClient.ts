@@ -1,6 +1,6 @@
 const BASE_URL = process.env.CTX_RELAY_URL ?? "https://relay.walkie-talkie.dev";
 
-export type Slot = "a" | "b";
+export type Slot = "buddy1" | "buddy2";
 
 export interface Message {
   id: number;

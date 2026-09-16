@@ -4,14 +4,17 @@ allowed-tools: Bash
 ---
 
 Run this at the start of a session to attach and pull in anything unread. The relay
-auto-assigns a slot ("a" or "b") — no role to choose. $ARGUMENTS is just the invite code:
+auto-assigns a slot ("buddy1" or "buddy2") — no role to choose. $ARGUMENTS is just the invite
+code:
 
 ```bash
 CTX_RELAY_URL="${CTX_RELAY_URL:-https://walkie-talkie-relay-dhruvs-projects-49c8a074.vercel.app}" \
   npx --yes @dhruv_anand/walkie-talkie join $ARGUMENTS
 ```
 
-There is no auto-connect — this must be run explicitly, every session, on both sides.
+There is no auto-connect — this must be run explicitly, every session, on both sides. The
+output reports connection status: "waiting for buddy2/buddy1 to join" if the other side isn't
+here yet, or "you're both connected" if they are.
 
 **If the output lists any unanswered questions**, answer each one now, before starting on
 anything else the user asked for this session:

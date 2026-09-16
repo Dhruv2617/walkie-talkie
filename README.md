@@ -35,11 +35,16 @@ Install once per machine — no per-project setup, no manual `npx` typing:
 Then, in any project, from inside Claude Code:
 
 ```
-/walkie-talkie:init                              (once, ever — creates the channel)
-/walkie-talkie:join <code>                        (every session, both sides — slot auto-assigned)
+/walkie-talkie:init            # once, ever — creates the channel, attaches you as buddy1
+/walkie-talkie:join <code>    # every session, on the other machine — attaches as buddy2
 /walkie-talkie:share "some update"
 /walkie-talkie:ask "some question"
 ```
+
+`init` both creates the channel and attaches this session as `buddy1` — no separate `join`
+needed on that side. Send the printed invite code to the other person; they run `join` and are
+assigned `buddy2`. Both `init` and `join` report connection status ("waiting for buddy2 to
+join" / "you're both connected").
 
 Commands call the published CLI under the hood (`npx @dhruv_anand/walkie-talkie ...`), so both
 machines just need Node/npx available — no repo clone required.
@@ -49,8 +54,8 @@ machines just need Node/npx available — no repo clone required.
 The plugin's commands are a thin wrapper — the same commands work directly from any terminal:
 
 ```bash
-npx @dhruv_anand/walkie-talkie init
-npx @dhruv_anand/walkie-talkie join <code>   # slot ("a" or "b") is auto-assigned
+npx @dhruv_anand/walkie-talkie init   # creates channel, attaches as buddy1
+npx @dhruv_anand/walkie-talkie join <code>   # attaches as buddy2 (slot auto-assigned)
 npx @dhruv_anand/walkie-talkie share "some update"
 npx @dhruv_anand/walkie-talkie ask "some question"
 ```

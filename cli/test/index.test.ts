@@ -21,17 +21,27 @@ beforeEach(() => {
 });
 
 describe("dispatch", () => {
-  it("init prints the invite code", async () => {
-    vi.mocked(init.runInit).mockResolvedValue("WT-abc");
+  it("init prints the invite code and connection status as buddy1", async () => {
+    vi.mocked(init.runInit).mockResolvedValue({ code: "WT-abc", slot: "buddy1" });
     const out = await dispatch(["init"]);
     expect(out).toContain("WT-abc");
+    expect(out).toContain("connected as buddy1");
+    expect(out).toContain("wait for buddy2 to join");
   });
 
-  it("join prints the assigned slot", async () => {
-    vi.mocked(join.runJoin).mockResolvedValue({ slot: "a", messages: [] });
+  it("join prints connected status when the other buddy is already online", async () => {
+    vi.mocked(join.runJoin).mockResolvedValue({ slot: "buddy2", otherOnline: true, messages: [] });
     const out = await dispatch(["join", "WT-abc"]);
     expect(join.runJoin).toHaveBeenCalledWith("WT-abc");
-    expect(out).toContain("attached as slot a");
+    expect(out).toContain("connected as buddy2");
+    expect(out).toContain("buddy1 is here too, you're both connected");
+  });
+
+  it("join prints waiting status when the other buddy has not joined yet", async () => {
+    vi.mocked(join.runJoin).mockResolvedValue({ slot: "buddy1", otherOnline: false, messages: [] });
+    const out = await dispatch(["join", "WT-abc"]);
+    expect(out).toContain("connected as buddy1");
+    expect(out).toContain("waiting for buddy2 to join");
   });
 
   it("share pushes the given text", async () => {
@@ -56,12 +66,13 @@ describe("dispatch", () => {
 
   it("join lists pulled messages and flags unanswered questions", async () => {
     vi.mocked(join.runJoin).mockResolvedValue({
-      slot: "b",
+      slot: "buddy2",
+      otherOnline: true,
       messages: [
-        { id: 100, from: "a", ts: 1, type: "fyi", text: "renamed org_name", reply_to: null },
+        { id: 100, from: "buddy1", ts: 1, type: "fyi", text: "renamed org_name", reply_to: null },
         {
           id: 101,
-          from: "a",
+          from: "buddy1",
           ts: 2,
           type: "question",
           text: "does qty accept decimals?",
@@ -78,17 +89,18 @@ describe("dispatch", () => {
 
   it("join does not flag a question that already has a matching answer in the same pull", async () => {
     vi.mocked(join.runJoin).mockResolvedValue({
-      slot: "b",
+      slot: "buddy2",
+      otherOnline: true,
       messages: [
         {
           id: 101,
-          from: "b",
+          from: "buddy2",
           ts: 1,
           type: "question",
           text: "does qty accept decimals?",
           reply_to: null,
         },
-        { id: 102, from: "a", ts: 2, type: "answer", text: "integer only", reply_to: 101 },
+        { id: 102, from: "buddy1", ts: 2, type: "answer", text: "integer only", reply_to: 101 },
       ],
     });
     const out = await dispatch(["join", "WT-abc"]);

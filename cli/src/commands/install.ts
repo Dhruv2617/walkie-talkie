@@ -2,6 +2,24 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const COMMANDS: Record<string, string> = {
+  "init-relay.md": `---
+description: Create a walkie-talkie channel and print an invite code (run once, ever)
+---
+
+Run this exactly once, ever, to create the shared channel:
+
+\`\`\`bash
+npx @dhruv_anand/walkie-talkie init
+\`\`\`
+
+This also attaches this session as \`buddy1\` automatically — no separate join needed on this
+side. Print the resulting invite code clearly and tell the user to send it to the other person
+(Slack, text, etc — outside this system). They'll run \`/join-relay <code>\` and be assigned
+\`buddy2\`.
+
+Do not run this again for the same pairing — running it a second time creates a brand new,
+unrelated channel.
+`,
   "share-context.md": `---
 description: Push an async update (FYI or answer) to the paired walkie-talkie channel
 ---
@@ -33,7 +51,9 @@ description: Attach this session to a walkie-talkie channel (run once per sessio
 ---
 
 Run this at the start of a session to attach and pull in anything unread. The relay
-auto-assigns a slot ("a" or "b") — no role to choose. $ARGUMENTS is just the invite code:
+auto-assigns a slot ("buddy1" or "buddy2") — no role to choose. $ARGUMENTS is just the invite
+code. The output reports connection status: "waiting for buddy2/buddy1 to join" if the other
+side isn't here yet, or "you're both connected" if they are.
 
 \`\`\`bash
 npx @dhruv_anand/walkie-talkie join $ARGUMENTS
