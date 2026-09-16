@@ -1,7 +1,7 @@
 {
   "name": "walkie-talkie",
   "description": "Pass context between two Claude Code sessions on separate machines, without a live connection.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Dhruv2617",
     "url": "https://github.com/Dhruv2617"
@@ -10,7 +10,8 @@
     "./commands/init.md",
     "./commands/join.md",
     "./commands/share.md",
-    "./commands/ask.md"
+    "./commands/ask.md",
+    "./commands/status.md"
   ],
   "homepage": "https://github.com/Dhruv2617/walkie-talkie",
   "repository": "https://github.com/Dhruv2617/walkie-talkie",

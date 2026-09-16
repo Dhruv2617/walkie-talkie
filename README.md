@@ -39,12 +39,22 @@ Then, in any project, from inside Claude Code:
 /walkie-talkie:join <code>    # every session, on the other machine — attaches as buddy2
 /walkie-talkie:share "some update"
 /walkie-talkie:ask "some question"
+/walkie-talkie:status          # reprint the invite code + connection status without re-running init
 ```
 
 `init` both creates the channel and attaches this session as `buddy1` — no separate `join`
 needed on that side. Send the printed invite code to the other person; they run `join` and are
-assigned `buddy2`. Both `init` and `join` report connection status ("waiting for buddy2 to
-join" / "you're both connected").
+assigned `buddy2`. Never run `init` a second time for the same pairing (it creates a brand new,
+unrelated channel) — run `status` instead if you need the invite code again.
+
+`init`, `join`, and `status` all report connection status ("waiting for buddy2 to join" / "you're
+both connected"). `share` and `ask` also report the other side's live presence — if their
+session has closed, you'll see "buddyN is offline — connection closed" the next time you push a
+message or ask a question; `ask` additionally exits early with a disconnect message if the other
+side goes offline while it's mid-poll, rather than waiting out the full timeout. There's no
+instant push notification the moment a session closes (that would need a persistent background
+process, out of scope for now) — connection status is checked and reported whenever a command
+runs.
 
 Commands call the published CLI under the hood (`npx @dhruv_anand/walkie-talkie ...`), so both
 machines just need Node/npx available — no repo clone required.
@@ -58,6 +68,7 @@ npx @dhruv_anand/walkie-talkie init   # creates channel, attaches as buddy1
 npx @dhruv_anand/walkie-talkie join <code>   # attaches as buddy2 (slot auto-assigned)
 npx @dhruv_anand/walkie-talkie share "some update"
 npx @dhruv_anand/walkie-talkie ask "some question"
+npx @dhruv_anand/walkie-talkie status   # reprint invite code + connection status
 ```
 
 Set `CTX_RELAY_URL` in your environment first (see above) so the CLI knows which relay to talk to.

@@ -9,12 +9,14 @@ import * as join from "../src/commands/join";
 import * as share from "../src/commands/share";
 import * as ask from "../src/commands/ask";
 import * as install from "../src/commands/install";
+import * as status from "../src/commands/status";
 
 vi.mock("../src/commands/init");
 vi.mock("../src/commands/join");
 vi.mock("../src/commands/share");
 vi.mock("../src/commands/ask");
 vi.mock("../src/commands/install");
+vi.mock("../src/commands/status");
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -44,15 +46,22 @@ describe("dispatch", () => {
     expect(out).toContain("waiting for buddy2 to join");
   });
 
-  it("share pushes the given text", async () => {
-    vi.mocked(share.runShare).mockResolvedValue(9);
+  it("share pushes the given text and reports the other side online", async () => {
+    vi.mocked(share.runShare).mockResolvedValue({ id: 9, otherSlot: "buddy2", otherOnline: true });
     const out = await dispatch(["share", "qty", "is", "integer", "only"]);
     expect(share.runShare).toHaveBeenCalledWith("qty is integer only", undefined);
     expect(out).toContain("9");
+    expect(out).toContain("buddy2 is online");
+  });
+
+  it("share reports the other side offline — connection closed", async () => {
+    vi.mocked(share.runShare).mockResolvedValue({ id: 9, otherSlot: "buddy2", otherOnline: false });
+    const out = await dispatch(["share", "hello"]);
+    expect(out).toContain("buddy2 is offline — connection closed");
   });
 
   it("share parses --reply-to and passes it through", async () => {
-    vi.mocked(share.runShare).mockResolvedValue(102);
+    vi.mocked(share.runShare).mockResolvedValue({ id: 102, otherSlot: "buddy1", otherOnline: true });
     const out = await dispatch(["share", "integer", "only", "--reply-to", "101"]);
     expect(share.runShare).toHaveBeenCalledWith("integer only", { replyTo: 101 });
     expect(out).toContain("102");
@@ -124,6 +133,24 @@ describe("dispatch", () => {
     const out = await dispatch(["install"]);
     expect(install.runInstall).toHaveBeenCalled();
     expect(out).toContain("installed 3 Claude Code command(s)");
+  });
+
+  it("status reprints the invite code and connection status", async () => {
+    vi.mocked(status.runStatus).mockResolvedValue({
+      code: "WT-abc",
+      slot: "buddy1",
+      otherOnline: false,
+    });
+    const out = await dispatch(["status"]);
+    expect(out).toContain("invite code: WT-abc");
+    expect(out).toContain("connected as buddy1");
+    expect(out).toContain("waiting for buddy2 to join");
+  });
+
+  it("status reports not-joined when there is no saved config", async () => {
+    vi.mocked(status.runStatus).mockResolvedValue(null);
+    const out = await dispatch(["status"]);
+    expect(out).toContain("not joined to any channel yet");
   });
 });
 

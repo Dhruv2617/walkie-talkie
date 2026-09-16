@@ -35,6 +35,12 @@ export async function runAsk(
     const messages = await pullMessages(cfg.channelId, cfg.secret, questionId - 1);
     const reply = messages.find((m) => m.type === "answer" && m.reply_to === questionId);
     if (reply) return reply.text;
+
+    const stillOnline = await getPresence(cfg.channelId, cfg.secret, otherSlot);
+    if (!stillOnline) {
+      return "the other side disconnected while waiting — proceeding with an assumption, flagged for follow-up";
+    }
+
     await sleep(pollIntervalMs);
   }
 

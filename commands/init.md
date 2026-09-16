@@ -16,4 +16,7 @@ the other person (Slack, text, etc — outside this system). They'll run `/walki
 <code>` and be assigned `buddy2`.
 
 Do not run this again for the same pairing — running it a second time creates a brand new,
-unrelated channel.
+unrelated channel. If a channel already exists (check whether `~/.ctx-relay/config.json`
+exists, or just try running `init` and see if this note applies), run `/walkie-talkie:status`
+instead — it reprints the current invite code and connection status without creating anything
+new.

@@ -11,4 +11,6 @@ CTX_RELAY_URL="${CTX_RELAY_URL:-https://walkie-talkie-relay-dhruvs-projects-49c8
 ```
 
 This blocks (with a timeout) only if the other side is currently online. If they're offline,
-it pushes the question anyway and returns immediately with a fallback so you aren't stuck.
+it pushes the question anyway and returns immediately with a fallback so you aren't stuck. If
+the other side disconnects while you're waiting (their session closes mid-poll), this also
+exits early with a disconnect message instead of waiting out the full timeout.

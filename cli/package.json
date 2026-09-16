@@ -1,6 +1,6 @@
 {
   "name": "@dhruv_anand/walkie-talkie",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "bin": { "walkie-talkie": "./dist/index.js" },
   "files": ["dist"],

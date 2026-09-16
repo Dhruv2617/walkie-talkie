@@ -9,7 +9,11 @@ export function encodeInviteCode(payload: InviteCodePayload): string {
 }
 
 export function decodeInviteCode(code: string): InviteCodePayload {
-  const b64 = code.replace(/^WT-/, "");
+  // Codes get copy-pasted through terminals and chat apps, which sometimes
+  // reflow a long line and inject whitespace/newlines — strip all whitespace
+  // rather than fail on a cosmetic artifact of how it was transmitted.
+  const cleaned = code.replace(/\s+/g, "");
+  const b64 = cleaned.replace(/^WT-/, "");
   const json = Buffer.from(b64, "base64url").toString("utf8");
   return JSON.parse(json) as InviteCodePayload;
 }

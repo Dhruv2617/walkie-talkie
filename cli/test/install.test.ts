@@ -15,10 +15,10 @@ afterEach(() => {
 });
 
 describe("runInstall", () => {
-  it("writes the four Claude Code commands under .claude/commands", () => {
+  it("writes the five Claude Code commands under .claude/commands", () => {
     const written = runInstall(dir);
 
-    expect(written).toHaveLength(4);
+    expect(written).toHaveLength(5);
     for (const path of written) {
       expect(existsSync(path)).toBe(true);
     }
@@ -38,6 +38,15 @@ describe("runInstall", () => {
 
     const join_ = readFileSync(join(dir, ".claude", "commands", "join-relay.md"), "utf8");
     expect(join_).toContain("walkie-talkie join");
+
+    const status = readFileSync(join(dir, ".claude", "commands", "status-relay.md"), "utf8");
+    expect(status).toContain("walkie-talkie status");
+  });
+
+  it("init-relay points at status-relay instead of allowing a silent re-run", () => {
+    runInstall(dir);
+    const init = readFileSync(join(dir, ".claude", "commands", "init-relay.md"), "utf8");
+    expect(init).toContain("status-relay");
   });
 
   it("join-relay instructs answering unanswered questions before other work", () => {

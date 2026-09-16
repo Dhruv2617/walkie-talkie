@@ -6,6 +6,7 @@ import { runJoin } from "./commands/join.js";
 import { runShare } from "./commands/share.js";
 import { runAsk } from "./commands/ask.js";
 import { runInstall } from "./commands/install.js";
+import { runStatus } from "./commands/status.js";
 import { Slot } from "./relayClient.js";
 
 const OTHER_SLOT_NAME: Record<Slot, Slot> = { buddy1: "buddy2", buddy2: "buddy1" };
@@ -77,8 +78,14 @@ export async function dispatch(argv: string[]): Promise<string> {
         words.splice(flagIdx, 2);
       }
       const text = words.join(" ");
-      const id = await runShare(text, replyTo !== undefined ? { replyTo } : undefined);
-      return `pushed message ${id}`;
+      const { id, otherSlot, otherOnline } = await runShare(
+        text,
+        replyTo !== undefined ? { replyTo } : undefined
+      );
+      const status = otherOnline
+        ? `${otherSlot} is online`
+        : `${otherSlot} is offline — connection closed`;
+      return `pushed message ${id}\n${status}`;
     }
     case "ask": {
       const question = rest.join(" ");
@@ -87,6 +94,14 @@ export async function dispatch(argv: string[]): Promise<string> {
     case "install": {
       const written = runInstall();
       return `installed ${written.length} Claude Code command(s):\n${written.join("\n")}`;
+    }
+    case "status": {
+      const result = await runStatus();
+      if (!result) {
+        return "not joined to any channel yet — run `init` (once, ever) or `join <code>`";
+      }
+      const { code, slot, otherOnline } = result;
+      return `invite code: ${code}\n${connectionStatusLine(slot, otherOnline)}`;
     }
     default:
       throw new Error(`unknown command: ${cmd}`);

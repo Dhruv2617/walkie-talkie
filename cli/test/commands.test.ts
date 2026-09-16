@@ -91,25 +91,40 @@ describe("runJoin", () => {
 });
 
 describe("runShare", () => {
-  it("pushes an fyi message using the saved config", async () => {
+  it("pushes an fyi message using the saved config and reports the other side's presence", async () => {
     vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "buddy1" });
+    vi.mocked(relayClient.getPresence).mockResolvedValue(true);
     vi.mocked(relayClient.pushMessage).mockResolvedValue(9);
 
-    const id = await runShare("qty is integer only");
+    const { id, otherSlot, otherOnline } = await runShare("qty is integer only");
 
+    expect(relayClient.getPresence).toHaveBeenCalledWith("abc", "shh", "buddy2");
     expect(relayClient.pushMessage).toHaveBeenCalledWith("abc", "shh", {
       from: "buddy1",
       type: "fyi",
       text: "qty is integer only",
     });
     expect(id).toBe(9);
+    expect(otherSlot).toBe("buddy2");
+    expect(otherOnline).toBe(true);
+  });
+
+  it("reports the other side as offline when they've disconnected", async () => {
+    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "buddy1" });
+    vi.mocked(relayClient.getPresence).mockResolvedValue(false);
+    vi.mocked(relayClient.pushMessage).mockResolvedValue(9);
+
+    const { otherOnline } = await runShare("qty is integer only");
+
+    expect(otherOnline).toBe(false);
   });
 
   it("pushes an answer message with reply_to when replyTo is given", async () => {
     vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "buddy1" });
+    vi.mocked(relayClient.getPresence).mockResolvedValue(true);
     vi.mocked(relayClient.pushMessage).mockResolvedValue(102);
 
-    const id = await runShare("integer only", { replyTo: 101 });
+    const { id } = await runShare("integer only", { replyTo: 101 });
 
     expect(relayClient.pushMessage).toHaveBeenCalledWith("abc", "shh", {
       from: "buddy1",
@@ -162,5 +177,20 @@ describe("runAsk", () => {
     const answer = await runAsk("does qty accept decimals?", { pollIntervalMs: 1, timeoutMs: 5 });
 
     expect(answer).toBe("no answer yet — proceeding with an assumption, flagged for follow-up");
+  });
+
+  it("exits early with a disconnect message if the other side goes offline mid-poll", async () => {
+    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "buddy2" });
+    vi.mocked(relayClient.getPresence)
+      .mockResolvedValueOnce(true) // initial check before pushing the question
+      .mockResolvedValueOnce(false); // check after the first poll finds no reply yet
+    vi.mocked(relayClient.pushMessage).mockResolvedValue(101);
+    vi.mocked(relayClient.pullMessages).mockResolvedValue([]);
+
+    const answer = await runAsk("does qty accept decimals?", { pollIntervalMs: 1, timeoutMs: 1000 });
+
+    expect(answer).toBe(
+      "the other side disconnected while waiting — proceeding with an assumption, flagged for follow-up"
+    );
   });
 });

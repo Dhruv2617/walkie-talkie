@@ -18,7 +18,24 @@ side. Print the resulting invite code clearly and tell the user to send it to th
 \`buddy2\`.
 
 Do not run this again for the same pairing — running it a second time creates a brand new,
-unrelated channel.
+unrelated channel. If a channel already exists, run \`/status-relay\` instead — it reprints the
+current invite code and connection status without creating anything new.
+`,
+  "status-relay.md": `---
+description: Reprint the current invite code and connection status without creating a new channel
+---
+
+Run this whenever you need the invite code again (already ran \`init\` earlier, or resuming a
+session) instead of running \`init\` a second time — running \`init\` again creates a brand new,
+unrelated channel:
+
+\`\`\`bash
+npx @dhruv_anand/walkie-talkie status
+\`\`\`
+
+If this reports "not joined to any channel yet", there's nothing to reprint — run
+\`/init-relay\` (if no channel has ever been created) or \`/join-relay <code>\` (if you have an
+invite code from the other person) instead.
 `,
   "share-context.md": `---
 description: Push an async update (FYI or answer) to the paired walkie-talkie channel
@@ -31,7 +48,9 @@ npx @dhruv_anand/walkie-talkie share "$ARGUMENTS"
 \`\`\`
 
 Use this for FYIs the other side should see next session — API contract changes, decisions,
-status updates. This never blocks; nothing waits for it to be read.
+status updates. This never blocks; nothing waits for it to be read. The output also reports
+whether the other side is currently online or offline (connection closed) at the time of
+pushing — this is a snapshot at push time, not a live notification.
 `,
   "ask-relay.md": `---
 description: Ask the paired walkie-talkie session a question that blocks until answered
@@ -44,7 +63,9 @@ npx @dhruv_anand/walkie-talkie ask "$ARGUMENTS"
 \`\`\`
 
 This blocks (with a timeout) only if the other side is currently online. If they're offline,
-it pushes the question anyway and returns immediately with a fallback so you aren't stuck.
+it pushes the question anyway and returns immediately with a fallback so you aren't stuck. If
+the other side disconnects while you're waiting (their session closes mid-poll), this also
+exits early with a disconnect message instead of waiting out the full timeout.
 `,
   "join-relay.md": `---
 description: Attach this session to a walkie-talkie channel (run once per session, every session)
