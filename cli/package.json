@@ -1,8 +1,8 @@
 {
-  "name": "ctx-relay",
+  "name": "walkie-talkie",
   "version": "0.1.0",
   "type": "module",
-  "bin": { "ctx-relay": "./dist/index.js" },
+  "bin": { "walkie-talkie": "./dist/index.js" },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",

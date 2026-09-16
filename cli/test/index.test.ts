@@ -16,15 +16,15 @@ beforeEach(() => {
 
 describe("dispatch", () => {
   it("init prints the invite code", async () => {
-    vi.mocked(init.runInit).mockResolvedValue("CTXR-abc");
+    vi.mocked(init.runInit).mockResolvedValue("WT-abc");
     const out = await dispatch(["init"]);
-    expect(out).toContain("CTXR-abc");
+    expect(out).toContain("WT-abc");
   });
 
   it("join requires a role and prints attached message", async () => {
     vi.mocked(join.runJoin).mockResolvedValue({ messages: [] });
-    const out = await dispatch(["join", "CTXR-abc", "--role", "backend"]);
-    expect(join.runJoin).toHaveBeenCalledWith("CTXR-abc", "backend");
+    const out = await dispatch(["join", "WT-abc", "--role", "backend"]);
+    expect(join.runJoin).toHaveBeenCalledWith("WT-abc", "backend");
     expect(out).toContain("attached as backend");
   });
 
@@ -49,7 +49,7 @@ describe("dispatch", () => {
   });
 
   it("join rejects when --role is missing", async () => {
-    await expect(dispatch(["join", "CTXR-abc"])).rejects.toThrow(
+    await expect(dispatch(["join", "WT-abc"])).rejects.toThrow(
       "usage: ctx-relay join <code> --role <backend|frontend>"
     );
   });

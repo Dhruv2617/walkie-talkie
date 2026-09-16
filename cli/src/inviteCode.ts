@@ -5,11 +5,11 @@ export interface InviteCodePayload {
 
 export function encodeInviteCode(payload: InviteCodePayload): string {
   const json = JSON.stringify(payload);
-  return `CTXR-${Buffer.from(json, "utf8").toString("base64url")}`;
+  return `WT-${Buffer.from(json, "utf8").toString("base64url")}`;
 }
 
 export function decodeInviteCode(code: string): InviteCodePayload {
-  const b64 = code.replace(/^CTXR-/, "");
+  const b64 = code.replace(/^WT-/, "");
   const json = Buffer.from(b64, "base64url").toString("utf8");
   return JSON.parse(json) as InviteCodePayload;
 }

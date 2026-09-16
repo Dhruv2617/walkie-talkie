@@ -1,4 +1,4 @@
-const BASE_URL = process.env.CTX_RELAY_URL ?? "https://relay.ctx-relay.dev";
+const BASE_URL = process.env.CTX_RELAY_URL ?? "https://relay.walkie-talkie.dev";
 
 export interface Message {
   id: number;

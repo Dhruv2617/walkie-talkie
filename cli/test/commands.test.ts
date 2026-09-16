@@ -19,7 +19,7 @@ describe("runInit", () => {
 
     const code = await runInit();
 
-    expect(code.startsWith("CTXR-")).toBe(true);
+    expect(code.startsWith("WT-")).toBe(true);
   });
 });
 
@@ -30,7 +30,7 @@ describe("runJoin", () => {
       { id: 4, from: "backend", ts: 1, type: "fyi", text: "hi", reply_to: null },
     ]);
 
-    const { messages } = await runJoin("CTXR-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ", "frontend");
+    const { messages } = await runJoin("WT-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ", "frontend");
 
     expect(relayClient.joinChannel).toHaveBeenCalledWith("abc", "shh", "frontend");
     expect(config.writeConfig).toHaveBeenCalledWith({ channelId: "abc", secret: "shh", role: "frontend" });
@@ -43,7 +43,7 @@ describe("runJoin", () => {
     vi.mocked(config.readLastSeenId).mockReturnValue(3);
     vi.mocked(relayClient.pullMessages).mockResolvedValue([]);
 
-    const { messages } = await runJoin("CTXR-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ", "frontend");
+    const { messages } = await runJoin("WT-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ", "frontend");
 
     expect(config.writeLastSeenId).not.toHaveBeenCalled();
     expect(messages).toHaveLength(0);
