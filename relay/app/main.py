@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
-from relay.app.channels import router as channels_router
+from .channels import router as channels_router
 
-app = FastAPI(title="ctx-relay")
+app = FastAPI(title="walkie-talkie relay")
 app.include_router(channels_router)
 
 

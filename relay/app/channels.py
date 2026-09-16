@@ -4,8 +4,8 @@ import time
 
 from fastapi import APIRouter, HTTPException
 
-from relay.app.models import CreateChannelResponse, JoinRequest, PushMessageRequest
-from relay.app.redis_client import get_client
+from .models import CreateChannelResponse, JoinRequest, PushMessageRequest
+from .redis_client import get_client
 
 router = APIRouter()
 
