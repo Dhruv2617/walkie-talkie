@@ -15,10 +15,10 @@ A message relay that lets two Claude Code sessions on separate machines (e.g. a 
 
 ```bash
 cd relay
-pip install -r requirements.txt
-python -m pytest              # full suite
-python -m pytest tests/test_channels.py::test_join_is_atomic_under_concurrent_claims -v  # single test
-uvicorn relay.app.main:app --reload --app-dir ..   # run from repo root so `relay.app.main` resolves
+poetry install
+poetry run pytest              # full suite
+poetry run pytest tests/test_channels.py::test_join_is_atomic_under_concurrent_claims -v  # single test
+poetry run uvicorn relay.app.main:app --reload --app-dir ..   # run from repo root so `relay.app.main` resolves
 ```
 
 Environment variables:

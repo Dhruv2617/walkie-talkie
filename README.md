@@ -7,19 +7,16 @@ A small message relay between a backend and frontend agent, plus a CLI for talki
 
 ## Running the relay locally
 
-From the repository root (so the `relay.app.main` import path resolves):
+Dependencies are managed with [Poetry](https://python-poetry.org/).
 
 ```bash
 cd relay
-pip install -r requirements.txt  # or however deps are installed in this repo
-uvicorn relay.app.main:app --reload
+poetry install
+poetry run pytest
+poetry run uvicorn relay.app.main:app --reload --app-dir ..
 ```
 
-if the module is not importable from `relay/`, run instead from the repo root:
-
-```bash
-uvicorn relay.app.main:app --reload --app-dir .
-```
+`--app-dir ..` points uvicorn at the repo root so the `relay.app.main` import path resolves.
 
 ### Environment variables
 
