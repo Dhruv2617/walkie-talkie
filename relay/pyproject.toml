@@ -5,7 +5,6 @@ description = "walkie-talkie relay service"
 authors = [
     {name = "Dhruv2617",email = "dhruvanand2617@gmail.com"}
 ]
-readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
     "fastapi (>=0.141.1,<0.142.0)",
