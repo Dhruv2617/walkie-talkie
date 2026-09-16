@@ -20,7 +20,36 @@ export async function dispatch(argv: string[]): Promise<string> {
         throw new Error("usage: ctx-relay join <code> --role <backend|frontend>");
       }
       const { messages } = await runJoin(code, role);
-      return `attached as ${role}\n${messages.length} unread message(s) pulled in`;
+
+      if (messages.length === 0) {
+        return `attached as ${role}\nno unread messages`;
+      }
+
+      const answeredIds = new Set(
+        messages.filter((m) => m.type === "answer" && m.reply_to !== null).map((m) => m.reply_to)
+      );
+      const unansweredQuestions = messages.filter(
+        (m) => m.type === "question" && !answeredIds.has(m.id)
+      );
+
+      const lines = [`attached as ${role}`, `${messages.length} unread message(s):`];
+      for (const m of messages) {
+        const tag = m.reply_to !== null ? ` (reply to ${m.reply_to})` : "";
+        lines.push(`  [${m.id}] ${m.from} ${m.type}${tag}: ${m.text}`);
+      }
+
+      if (unansweredQuestions.length > 0) {
+        lines.push("");
+        lines.push(
+          `${unansweredQuestions.length} question(s) still need a reply — answer with ` +
+            `"share <text> --reply-to <id>" before doing anything else:`
+        );
+        for (const q of unansweredQuestions) {
+          lines.push(`  [${q.id}] ${q.text}`);
+        }
+      }
+
+      return lines.join("\n");
     }
     case "share": {
       let replyTo: number | undefined;

@@ -36,4 +36,11 @@ describe("runInstall", () => {
     const join_ = readFileSync(join(dir, ".claude", "commands", "join-relay.md"), "utf8");
     expect(join_).toContain("walkie-talkie join");
   });
+
+  it("join-relay instructs answering unanswered questions before other work", () => {
+    runInstall(dir);
+    const join_ = readFileSync(join(dir, ".claude", "commands", "join-relay.md"), "utf8");
+    expect(join_).toContain("unanswered questions");
+    expect(join_).toContain("--reply-to");
+  });
 });

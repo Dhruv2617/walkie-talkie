@@ -40,6 +40,15 @@ npx @dhruv_anand/walkie-talkie join $ARGUMENTS
 \`\`\`
 
 There is no auto-connect — this must be run explicitly, every session, on both sides.
+
+**If the output lists any unanswered questions**, answer each one now, before starting on
+anything else the user asked for this session. Reply to each with:
+
+\`\`\`bash
+npx @dhruv_anand/walkie-talkie share "<your answer>" --reply-to <question id>
+\`\`\`
+
+Only proceed to the user's actual request once every unanswered question has been replied to.
 `,
 };
 

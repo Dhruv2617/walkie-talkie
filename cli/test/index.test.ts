@@ -50,6 +50,45 @@ describe("dispatch", () => {
     expect(out).toBe("integer only");
   });
 
+  it("join lists pulled messages and flags unanswered questions", async () => {
+    vi.mocked(join.runJoin).mockResolvedValue({
+      messages: [
+        { id: 100, from: "backend", ts: 1, type: "fyi", text: "renamed org_name", reply_to: null },
+        {
+          id: 101,
+          from: "backend",
+          ts: 2,
+          type: "question",
+          text: "does qty accept decimals?",
+          reply_to: null,
+        },
+      ],
+    });
+    const out = await dispatch(["join", "WT-abc", "--role", "frontend"]);
+    expect(out).toContain("2 unread message(s)");
+    expect(out).toContain("does qty accept decimals?");
+    expect(out).toContain("1 question(s) still need a reply");
+    expect(out).toContain("[101] does qty accept decimals?");
+  });
+
+  it("join does not flag a question that already has a matching answer in the same pull", async () => {
+    vi.mocked(join.runJoin).mockResolvedValue({
+      messages: [
+        {
+          id: 101,
+          from: "frontend",
+          ts: 1,
+          type: "question",
+          text: "does qty accept decimals?",
+          reply_to: null,
+        },
+        { id: 102, from: "backend", ts: 2, type: "answer", text: "integer only", reply_to: 101 },
+      ],
+    });
+    const out = await dispatch(["join", "WT-abc", "--role", "frontend"]);
+    expect(out).not.toContain("still need a reply");
+  });
+
   it("join rejects when --role is missing", async () => {
     await expect(dispatch(["join", "WT-abc"])).rejects.toThrow(
       "usage: ctx-relay join <code> --role <backend|frontend>"
