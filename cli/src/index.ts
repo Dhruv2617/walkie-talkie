@@ -4,6 +4,7 @@ import { runInit } from "./commands/init.js";
 import { runJoin } from "./commands/join.js";
 import { runShare } from "./commands/share.js";
 import { runAsk } from "./commands/ask.js";
+import { runInstall } from "./commands/install.js";
 
 export async function dispatch(argv: string[]): Promise<string> {
   const [cmd, ...rest] = argv;
@@ -40,6 +41,10 @@ export async function dispatch(argv: string[]): Promise<string> {
     case "ask": {
       const question = rest.join(" ");
       return runAsk(question);
+    }
+    case "install": {
+      const written = runInstall();
+      return `installed ${written.length} Claude Code command(s):\n${written.join("\n")}`;
     }
     default:
       throw new Error(`unknown command: ${cmd}`);

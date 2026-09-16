@@ -4,11 +4,13 @@ import * as init from "../src/commands/init";
 import * as join from "../src/commands/join";
 import * as share from "../src/commands/share";
 import * as ask from "../src/commands/ask";
+import * as install from "../src/commands/install";
 
 vi.mock("../src/commands/init");
 vi.mock("../src/commands/join");
 vi.mock("../src/commands/share");
 vi.mock("../src/commands/ask");
+vi.mock("../src/commands/install");
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -56,5 +58,16 @@ describe("dispatch", () => {
 
   it("throws a clear error for an unknown command", async () => {
     await expect(dispatch(["frobnicate"])).rejects.toThrow("unknown command: frobnicate");
+  });
+
+  it("install writes Claude Code commands and reports how many", async () => {
+    vi.mocked(install.runInstall).mockReturnValue([
+      "/repo/.claude/commands/share-context.md",
+      "/repo/.claude/commands/ask-relay.md",
+      "/repo/.claude/commands/join-relay.md",
+    ]);
+    const out = await dispatch(["install"]);
+    expect(install.runInstall).toHaveBeenCalled();
+    expect(out).toContain("installed 3 Claude Code command(s)");
   });
 });
