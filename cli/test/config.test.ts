@@ -21,8 +21,8 @@ describe("config", () => {
   });
 
   it("writes and reads back the config", () => {
-    config.writeConfig({ channelId: "abc123", secret: "shh", role: "backend" });
-    expect(config.readConfig()).toEqual({ channelId: "abc123", secret: "shh", role: "backend" });
+    config.writeConfig({ channelId: "abc123", secret: "shh", slot: "a" });
+    expect(config.readConfig()).toEqual({ channelId: "abc123", secret: "shh", slot: "a" });
   });
 
   it("tracks last_seen_id per channel, defaulting to 0", () => {

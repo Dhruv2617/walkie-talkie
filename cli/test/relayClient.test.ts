@@ -22,17 +22,17 @@ describe("relayClient", () => {
     expect(result).toEqual({ channelId: "abc", secret: "shh" });
   });
 
-  it("joinChannel throws role_taken on 409", async () => {
+  it("joinChannel throws channel_full on 409", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
         ok: false,
         status: 409,
-        json: async () => ({ detail: { error: "role_taken" } }),
+        json: async () => ({ detail: { error: "channel_full" } }),
       })
     );
 
-    await expect(relayClient.joinChannel("abc", "shh", "backend")).rejects.toThrow("role_taken");
+    await expect(relayClient.joinChannel("abc", "shh")).rejects.toThrow("channel_full");
   });
 
   it("joinChannel throws plain-string detail on 403", async () => {
@@ -45,8 +45,20 @@ describe("relayClient", () => {
       })
     );
 
-    await expect(relayClient.joinChannel("abc", "wrong-secret", "backend")).rejects.toThrow(
+    await expect(relayClient.joinChannel("abc", "wrong-secret")).rejects.toThrow(
       "invalid channel or secret"
     );
+  });
+
+  it("joinChannel returns the assigned slot on success", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ slot: "a" }),
+      })
+    );
+
+    await expect(relayClient.joinChannel("abc", "shh")).resolves.toBe("a");
   });
 });

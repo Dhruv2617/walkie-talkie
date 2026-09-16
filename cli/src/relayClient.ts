@@ -1,8 +1,10 @@
 const BASE_URL = process.env.CTX_RELAY_URL ?? "https://relay.walkie-talkie.dev";
 
+export type Slot = "a" | "b";
+
 export interface Message {
   id: number;
-  from: "backend" | "frontend";
+  from: Slot;
   ts: number;
   type: "fyi" | "question" | "answer";
   text: string;
@@ -50,23 +52,24 @@ export async function createChannel(): Promise<{ channelId: string; secret: stri
   return { channelId: body.channel_id, secret: body.secret };
 }
 
-export async function joinChannel(channelId: string, secret: string, role: string): Promise<void> {
-  await request(`/channels/${channelId}/join`, {
+export async function joinChannel(channelId: string, secret: string): Promise<Slot> {
+  const body = await request(`/channels/${channelId}/join`, {
     method: "POST",
-    body: JSON.stringify({ secret, role }),
+    body: JSON.stringify({ secret }),
   });
+  return body.slot as Slot;
 }
 
-export async function heartbeat(channelId: string, secret: string, role: string): Promise<void> {
+export async function heartbeat(channelId: string, secret: string, slot: Slot): Promise<void> {
   await request(`/channels/${channelId}/heartbeat`, {
     method: "POST",
-    body: JSON.stringify({ secret, role }),
+    body: JSON.stringify({ secret, slot }),
   });
 }
 
-export async function getPresence(channelId: string, secret: string, role: string): Promise<boolean> {
+export async function getPresence(channelId: string, secret: string, slot: Slot): Promise<boolean> {
   const body = await request(
-    `/channels/${channelId}/presence/${role}?secret=${encodeURIComponent(secret)}`
+    `/channels/${channelId}/presence/${slot}?secret=${encodeURIComponent(secret)}`
   );
   return body.online as boolean;
 }
@@ -74,7 +77,7 @@ export async function getPresence(channelId: string, secret: string, role: strin
 export async function pushMessage(
   channelId: string,
   secret: string,
-  msg: { from: "backend" | "frontend"; type: "fyi" | "question" | "answer"; text: string; reply_to?: number }
+  msg: { from: Slot; type: "fyi" | "question" | "answer"; text: string; reply_to?: number }
 ): Promise<number> {
   const body = await request(`/channels/${channelId}/messages`, {
     method: "POST",

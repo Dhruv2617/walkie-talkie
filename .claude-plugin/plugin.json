@@ -1,7 +1,7 @@
 {
   "name": "walkie-talkie",
   "description": "Pass context between two Claude Code sessions on separate machines, without a live connection.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Dhruv2617",
     "url": "https://github.com/Dhruv2617"

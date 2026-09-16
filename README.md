@@ -36,7 +36,7 @@ Then, in any project, from inside Claude Code:
 
 ```
 /walkie-talkie:init                              (once, ever — creates the channel)
-/walkie-talkie:join <code> --role backend         (every session, both sides)
+/walkie-talkie:join <code>                        (every session, both sides — slot auto-assigned)
 /walkie-talkie:share "some update"
 /walkie-talkie:ask "some question"
 ```
@@ -50,7 +50,7 @@ The plugin's commands are a thin wrapper — the same commands work directly fro
 
 ```bash
 npx @dhruv_anand/walkie-talkie init
-npx @dhruv_anand/walkie-talkie join <code> --role backend   # or frontend
+npx @dhruv_anand/walkie-talkie join <code>   # slot ("a" or "b") is auto-assigned
 npx @dhruv_anand/walkie-talkie share "some update"
 npx @dhruv_anand/walkie-talkie ask "some question"
 ```

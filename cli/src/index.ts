@@ -15,14 +15,14 @@ export async function dispatch(argv: string[]): Promise<string> {
       return `invite code: ${code}`;
     }
     case "join": {
-      const [code, roleFlag, role] = rest;
-      if (roleFlag !== "--role" || (role !== "backend" && role !== "frontend")) {
-        throw new Error("usage: ctx-relay join <code> --role <backend|frontend>");
+      const [code] = rest;
+      if (!code) {
+        throw new Error("usage: ctx-relay join <code>");
       }
-      const { messages } = await runJoin(code, role);
+      const { slot, messages } = await runJoin(code);
 
       if (messages.length === 0) {
-        return `attached as ${role}\nno unread messages`;
+        return `attached as slot ${slot}\nno unread messages`;
       }
 
       const answeredIds = new Set(
@@ -32,7 +32,7 @@ export async function dispatch(argv: string[]): Promise<string> {
         (m) => m.type === "question" && !answeredIds.has(m.id)
       );
 
-      const lines = [`attached as ${role}`, `${messages.length} unread message(s):`];
+      const lines = [`attached as slot ${slot}`, `${messages.length} unread message(s):`];
       for (const m of messages) {
         const tag = m.reply_to !== null ? ` (reply to ${m.reply_to})` : "";
         lines.push(`  [${m.id}] ${m.from} ${m.type}${tag}: ${m.text}`);
@@ -85,8 +85,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     .then((out) => console.log(out))
     .catch((err) => {
       const message =
-        err.message === "role_taken"
-          ? "that role is already taken in this channel"
+        err.message === "channel_full"
+          ? "this channel already has two people joined"
           : err.message;
       console.error(message);
       process.exitCode = 1;

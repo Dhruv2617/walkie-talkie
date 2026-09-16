@@ -10,14 +10,22 @@ class CreateChannelResponse(BaseModel):
 
 class JoinRequest(BaseModel):
     secret: str
-    role: Literal["backend", "frontend"]
+
+
+class JoinResponse(BaseModel):
+    slot: Literal["a", "b"]
+
+
+class SlotRequest(BaseModel):
+    secret: str
+    slot: Literal["a", "b"]
 
 
 class PushMessageRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     secret: str
-    from_: Literal["backend", "frontend"] = Field(alias="from")
+    from_: Literal["a", "b"] = Field(alias="from")
     type: Literal["fyi", "question", "answer"]
     text: str
     reply_to: Optional[int] = None

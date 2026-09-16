@@ -25,15 +25,15 @@ Run this when you need an answer from the other side before you can proceed:
 npx @dhruv_anand/walkie-talkie ask "$ARGUMENTS"
 \`\`\`
 
-This blocks (with a timeout) only if the other role is currently online. If they're offline,
+This blocks (with a timeout) only if the other side is currently online. If they're offline,
 it pushes the question anyway and returns immediately with a fallback so you aren't stuck.
 `,
   "join-relay.md": `---
 description: Attach this session to a walkie-talkie channel (run once per session, every session)
 ---
 
-Run this at the start of a session to attach as a role and pull in anything unread. $ARGUMENTS
-should be "<invite-code> --role <backend|frontend>":
+Run this at the start of a session to attach and pull in anything unread. The relay
+auto-assigns a slot ("a" or "b") — no role to choose. $ARGUMENTS is just the invite code:
 
 \`\`\`bash
 npx @dhruv_anand/walkie-talkie join $ARGUMENTS

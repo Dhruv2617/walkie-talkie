@@ -6,11 +6,11 @@ export async function runShare(text: string, opts?: { replyTo?: number }): Promi
   if (!cfg) throw new Error("not joined to a channel — run `ctx-relay join <code>` first");
   if (opts?.replyTo !== undefined) {
     return pushMessage(cfg.channelId, cfg.secret, {
-      from: cfg.role,
+      from: cfg.slot,
       type: "answer",
       text,
       reply_to: opts.replyTo,
     });
   }
-  return pushMessage(cfg.channelId, cfg.secret, { from: cfg.role, type: "fyi", text });
+  return pushMessage(cfg.channelId, cfg.secret, { from: cfg.slot, type: "fyi", text });
 }

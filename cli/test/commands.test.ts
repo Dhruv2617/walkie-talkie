@@ -24,33 +24,36 @@ describe("runInit", () => {
 });
 
 describe("runJoin", () => {
-  it("joins the role, saves config, and pulls unread messages", async () => {
+  it("joins the channel, saves the assigned slot, and pulls unread messages", async () => {
+    vi.mocked(relayClient.joinChannel).mockResolvedValue("b");
     vi.mocked(config.readLastSeenId).mockReturnValue(3);
     vi.mocked(relayClient.pullMessages).mockResolvedValue([
-      { id: 4, from: "backend", ts: 1, type: "fyi", text: "hi", reply_to: null },
+      { id: 4, from: "a", ts: 1, type: "fyi", text: "hi", reply_to: null },
     ]);
 
-    const { messages } = await runJoin("WT-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ", "frontend");
+    const { slot, messages } = await runJoin("WT-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ");
 
-    expect(relayClient.joinChannel).toHaveBeenCalledWith("abc", "shh", "frontend");
-    expect(config.writeConfig).toHaveBeenCalledWith({ channelId: "abc", secret: "shh", role: "frontend" });
+    expect(relayClient.joinChannel).toHaveBeenCalledWith("abc", "shh");
+    expect(config.writeConfig).toHaveBeenCalledWith({ channelId: "abc", secret: "shh", slot: "b" });
     expect(relayClient.pullMessages).toHaveBeenCalledWith("abc", "shh", 3);
     expect(config.writeLastSeenId).toHaveBeenCalledWith("abc", 4);
+    expect(slot).toBe("b");
     expect(messages).toHaveLength(1);
   });
 
   it("does not advance the marker when there are no unread messages", async () => {
+    vi.mocked(relayClient.joinChannel).mockResolvedValue("a");
     vi.mocked(config.readLastSeenId).mockReturnValue(3);
     vi.mocked(relayClient.pullMessages).mockResolvedValue([]);
 
-    const { messages } = await runJoin("WT-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ", "frontend");
+    const { messages } = await runJoin("WT-eyJjaGFubmVsSWQiOiJhYmMiLCJzZWNyZXQiOiJzaGgifQ");
 
     expect(config.writeLastSeenId).not.toHaveBeenCalled();
     expect(messages).toHaveLength(0);
   });
 
   it("rejects with a clear error for a malformed invite code", async () => {
-    await expect(runJoin("not-a-valid-code", "frontend")).rejects.toThrow("invalid invite code");
+    await expect(runJoin("not-a-valid-code")).rejects.toThrow("invalid invite code");
 
     expect(relayClient.joinChannel).not.toHaveBeenCalled();
     expect(config.writeConfig).not.toHaveBeenCalled();
@@ -59,13 +62,13 @@ describe("runJoin", () => {
 
 describe("runShare", () => {
   it("pushes an fyi message using the saved config", async () => {
-    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", role: "backend" });
+    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "a" });
     vi.mocked(relayClient.pushMessage).mockResolvedValue(9);
 
     const id = await runShare("qty is integer only");
 
     expect(relayClient.pushMessage).toHaveBeenCalledWith("abc", "shh", {
-      from: "backend",
+      from: "a",
       type: "fyi",
       text: "qty is integer only",
     });
@@ -73,13 +76,13 @@ describe("runShare", () => {
   });
 
   it("pushes an answer message with reply_to when replyTo is given", async () => {
-    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", role: "backend" });
+    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "a" });
     vi.mocked(relayClient.pushMessage).mockResolvedValue(102);
 
     const id = await runShare("integer only", { replyTo: 101 });
 
     expect(relayClient.pushMessage).toHaveBeenCalledWith("abc", "shh", {
-      from: "backend",
+      from: "a",
       type: "answer",
       text: "integer only",
       reply_to: 101,
@@ -89,29 +92,30 @@ describe("runShare", () => {
 });
 
 describe("runAsk", () => {
-  it("returns an offline fallback without polling when the other role is not present", async () => {
-    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", role: "frontend" });
+  it("returns an offline fallback without polling when the other slot is not present", async () => {
+    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "b" });
     vi.mocked(relayClient.getPresence).mockResolvedValue(false);
     vi.mocked(relayClient.pushMessage).mockResolvedValue(101);
 
     const answer = await runAsk("does qty accept decimals?");
 
+    expect(relayClient.getPresence).toHaveBeenCalledWith("abc", "shh", "a");
     expect(relayClient.pushMessage).toHaveBeenCalledWith("abc", "shh", {
-      from: "frontend",
+      from: "b",
       type: "question",
       text: "does qty accept decimals?",
     });
     expect(answer).toBe("no one online — proceeding with an assumption, flagged for follow-up");
   });
 
-  it("polls until a reply_to match arrives when the other role is online", async () => {
-    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", role: "frontend" });
+  it("polls until a reply_to match arrives when the other slot is online", async () => {
+    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "b" });
     vi.mocked(relayClient.getPresence).mockResolvedValue(true);
     vi.mocked(relayClient.pushMessage).mockResolvedValue(101);
     vi.mocked(relayClient.pullMessages)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([
-        { id: 102, from: "backend", ts: 1, type: "answer", text: "integer only", reply_to: 101 },
+        { id: 102, from: "a", ts: 1, type: "answer", text: "integer only", reply_to: 101 },
       ]);
 
     const answer = await runAsk("does qty accept decimals?", { pollIntervalMs: 1, timeoutMs: 1000 });
@@ -120,7 +124,7 @@ describe("runAsk", () => {
   });
 
   it("falls back to a timeout message if no reply arrives in time", async () => {
-    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", role: "frontend" });
+    vi.mocked(config.readConfig).mockReturnValue({ channelId: "abc", secret: "shh", slot: "b" });
     vi.mocked(relayClient.getPresence).mockResolvedValue(true);
     vi.mocked(relayClient.pushMessage).mockResolvedValue(101);
     vi.mocked(relayClient.pullMessages).mockResolvedValue([]);

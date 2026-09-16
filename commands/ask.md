@@ -10,5 +10,5 @@ CTX_RELAY_URL="${CTX_RELAY_URL:-https://walkie-talkie-relay-dhruvs-projects-49c8
   npx --yes @dhruv_anand/walkie-talkie ask "$ARGUMENTS"
 ```
 
-This blocks (with a timeout) only if the other role is currently online. If they're offline,
+This blocks (with a timeout) only if the other side is currently online. If they're offline,
 it pushes the question anyway and returns immediately with a fallback so you aren't stuck.

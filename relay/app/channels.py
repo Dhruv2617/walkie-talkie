@@ -4,13 +4,14 @@ import time
 
 from fastapi import APIRouter, HTTPException
 
-from .models import CreateChannelResponse, JoinRequest, PushMessageRequest
+from .models import CreateChannelResponse, JoinRequest, JoinResponse, PushMessageRequest, SlotRequest
 from .redis_client import get_client
 
 router = APIRouter()
 
 PRESENCE_TTL_SECONDS = 60
 MAX_MESSAGES = 50
+SLOTS = ("a", "b")
 
 
 def _check_secret(r, channel_id: str, secret: str):
@@ -28,33 +29,33 @@ def create_channel():
     return CreateChannelResponse(channel_id=channel_id, secret=secret)
 
 
-@router.post("/channels/{channel_id}/join", status_code=201)
+@router.post("/channels/{channel_id}/join", status_code=201, response_model=JoinResponse)
 def join_channel(channel_id: str, body: JoinRequest):
     r = get_client()
     _check_secret(r, channel_id, body.secret)
 
-    key = f"channel:{channel_id}:online:{body.role}"
-    claimed = r.set(key, "1", nx=True, ex=PRESENCE_TTL_SECONDS)
-    if not claimed:
-        raise HTTPException(status_code=409, detail={"error": "role_taken"})
-    return {"ok": True}
+    for slot in SLOTS:
+        claimed = r.set(f"channel:{channel_id}:online:{slot}", "1", nx=True, ex=PRESENCE_TTL_SECONDS)
+        if claimed:
+            return JoinResponse(slot=slot)
+    raise HTTPException(status_code=409, detail={"error": "channel_full"})
 
 
 @router.post("/channels/{channel_id}/heartbeat")
-def heartbeat(channel_id: str, body: JoinRequest):
+def heartbeat(channel_id: str, body: SlotRequest):
     r = get_client()
     _check_secret(r, channel_id, body.secret)
-    refreshed = r.expire(f"channel:{channel_id}:online:{body.role}", PRESENCE_TTL_SECONDS)
+    refreshed = r.expire(f"channel:{channel_id}:online:{body.slot}", PRESENCE_TTL_SECONDS)
     if not refreshed:
         raise HTTPException(status_code=404, detail={"error": "not_claimed"})
     return {"ok": True}
 
 
-@router.get("/channels/{channel_id}/presence/{role}")
-def get_presence(channel_id: str, role: str, secret: str):
+@router.get("/channels/{channel_id}/presence/{slot}")
+def get_presence(channel_id: str, slot: str, secret: str):
     r = get_client()
     _check_secret(r, channel_id, secret)
-    online = r.exists(f"channel:{channel_id}:online:{role}") == 1
+    online = r.exists(f"channel:{channel_id}:online:{slot}") == 1
     return {"online": online}
 
 

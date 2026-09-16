@@ -23,11 +23,11 @@ describe("dispatch", () => {
     expect(out).toContain("WT-abc");
   });
 
-  it("join requires a role and prints attached message", async () => {
-    vi.mocked(join.runJoin).mockResolvedValue({ messages: [] });
-    const out = await dispatch(["join", "WT-abc", "--role", "backend"]);
-    expect(join.runJoin).toHaveBeenCalledWith("WT-abc", "backend");
-    expect(out).toContain("attached as backend");
+  it("join prints the assigned slot", async () => {
+    vi.mocked(join.runJoin).mockResolvedValue({ slot: "a", messages: [] });
+    const out = await dispatch(["join", "WT-abc"]);
+    expect(join.runJoin).toHaveBeenCalledWith("WT-abc");
+    expect(out).toContain("attached as slot a");
   });
 
   it("share pushes the given text", async () => {
@@ -52,11 +52,12 @@ describe("dispatch", () => {
 
   it("join lists pulled messages and flags unanswered questions", async () => {
     vi.mocked(join.runJoin).mockResolvedValue({
+      slot: "b",
       messages: [
-        { id: 100, from: "backend", ts: 1, type: "fyi", text: "renamed org_name", reply_to: null },
+        { id: 100, from: "a", ts: 1, type: "fyi", text: "renamed org_name", reply_to: null },
         {
           id: 101,
-          from: "backend",
+          from: "a",
           ts: 2,
           type: "question",
           text: "does qty accept decimals?",
@@ -64,7 +65,7 @@ describe("dispatch", () => {
         },
       ],
     });
-    const out = await dispatch(["join", "WT-abc", "--role", "frontend"]);
+    const out = await dispatch(["join", "WT-abc"]);
     expect(out).toContain("2 unread message(s)");
     expect(out).toContain("does qty accept decimals?");
     expect(out).toContain("1 question(s) still need a reply");
@@ -73,26 +74,25 @@ describe("dispatch", () => {
 
   it("join does not flag a question that already has a matching answer in the same pull", async () => {
     vi.mocked(join.runJoin).mockResolvedValue({
+      slot: "b",
       messages: [
         {
           id: 101,
-          from: "frontend",
+          from: "b",
           ts: 1,
           type: "question",
           text: "does qty accept decimals?",
           reply_to: null,
         },
-        { id: 102, from: "backend", ts: 2, type: "answer", text: "integer only", reply_to: 101 },
+        { id: 102, from: "a", ts: 2, type: "answer", text: "integer only", reply_to: 101 },
       ],
     });
-    const out = await dispatch(["join", "WT-abc", "--role", "frontend"]);
+    const out = await dispatch(["join", "WT-abc"]);
     expect(out).not.toContain("still need a reply");
   });
 
-  it("join rejects when --role is missing", async () => {
-    await expect(dispatch(["join", "WT-abc"])).rejects.toThrow(
-      "usage: ctx-relay join <code> --role <backend|frontend>"
-    );
+  it("join rejects when no invite code is given", async () => {
+    await expect(dispatch(["join"])).rejects.toThrow("usage: ctx-relay join <code>");
   });
 
   it("throws a clear error for an unknown command", async () => {
