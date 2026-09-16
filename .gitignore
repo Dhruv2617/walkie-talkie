@@ -5,3 +5,4 @@ relay/.venv/
 .pytest_cache/
 .env
 *.env
+docs/
