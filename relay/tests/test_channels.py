@@ -28,6 +28,26 @@ def test_second_join_gets_the_other_slot(client, fake_redis):
     assert second.json()["slot"] == "buddy2"
 
 
+def test_slot_ownership_survives_presence_expiry(client, fake_redis):
+    # Regression test for a real collision: buddy1's presence TTL lapsed
+    # (e.g. a ~1 minute gap between init and the second person joining)
+    # before the second join arrived. Slot ownership must be permanent and
+    # independent of the presence key, or the second joiner wrongly claims
+    # buddy1 again instead of buddy2.
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+
+    first = client.post(f"/channels/{channel_id}/join", json={"secret": secret})
+    assert first.json()["slot"] == "buddy1"
+
+    # Simulate the presence TTL lapsing without releasing slot ownership.
+    fake_redis.delete(f"channel:{channel_id}:online:buddy1")
+    assert fake_redis.exists(f"channel:{channel_id}:slot:buddy1") == 1
+
+    second = client.post(f"/channels/{channel_id}/join", json={"secret": secret})
+    assert second.json()["slot"] == "buddy2"
+
+
 def test_join_rejects_when_channel_full(client, fake_redis):
     created = client.post("/channels").json()
     channel_id, secret = created["channel_id"], created["secret"]
@@ -213,3 +233,21 @@ def test_heartbeat_succeeds_when_claimed(client, fake_redis):
     )
     assert resp.status_code == 200
     assert resp.json() == {"ok": True}
+
+
+def test_heartbeat_revives_presence_after_it_already_expired(client, fake_redis):
+    created = client.post("/channels").json()
+    channel_id, secret = created["channel_id"], created["secret"]
+    client.post(f"/channels/{channel_id}/join", json={"secret": secret})
+
+    # Simulate presence already having lapsed before the heartbeat arrives —
+    # ownership is separate and permanent, so the heartbeat should still
+    # succeed and re-establish presence rather than 404.
+    fake_redis.delete(f"channel:{channel_id}:online:buddy1")
+
+    resp = client.post(
+        f"/channels/{channel_id}/heartbeat",
+        json={"secret": secret, "slot": "buddy1"},
+    )
+    assert resp.status_code == 200
+    assert fake_redis.ttl(f"channel:{channel_id}:online:buddy1") > 0

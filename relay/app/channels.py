@@ -35,8 +35,14 @@ def join_channel(channel_id: str, body: JoinRequest):
     _check_secret(r, channel_id, body.secret)
 
     for slot in SLOTS:
-        claimed = r.set(f"channel:{channel_id}:online:{slot}", "1", nx=True, ex=PRESENCE_TTL_SECONDS)
-        if claimed:
+        # Slot ownership is permanent (no TTL) — whoever claims "buddy1" or
+        # "buddy2" first keeps that identity for the channel's lifetime.
+        # Presence (online:{slot}) is a separate, short-lived liveness flag —
+        # letting it expire must never free up the slot for someone else to
+        # claim, or two people can end up assigned the same slot.
+        owned = r.set(f"channel:{channel_id}:slot:{slot}", "1", nx=True)
+        if owned:
+            r.set(f"channel:{channel_id}:online:{slot}", "1", ex=PRESENCE_TTL_SECONDS)
             return JoinResponse(slot=slot)
     raise HTTPException(status_code=409, detail={"error": "channel_full"})
 
@@ -45,9 +51,13 @@ def join_channel(channel_id: str, body: JoinRequest):
 def heartbeat(channel_id: str, body: SlotRequest):
     r = get_client()
     _check_secret(r, channel_id, body.secret)
-    refreshed = r.expire(f"channel:{channel_id}:online:{body.slot}", PRESENCE_TTL_SECONDS)
-    if not refreshed:
+    # Check permanent slot ownership, not the expiring presence key — a
+    # heartbeat that arrives after presence already lapsed should still
+    # succeed and revive it, since the caller genuinely owns this slot.
+    owned = r.exists(f"channel:{channel_id}:slot:{body.slot}") == 1
+    if not owned:
         raise HTTPException(status_code=404, detail={"error": "not_claimed"})
+    r.set(f"channel:{channel_id}:online:{body.slot}", "1", ex=PRESENCE_TTL_SECONDS)
     return {"ok": True}
 
 
